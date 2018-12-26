@@ -42,6 +42,6 @@ int main() {
 
 	std::cerr << "Start training\n";
 
-	LayerNetwork network({784, 30, 10});
+	LayerNetwork network({784, 100, 10});
 	network.trainSGD(trainingData, 30, 10, 3.0, testData);
 }
