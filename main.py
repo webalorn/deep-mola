@@ -23,15 +23,14 @@ def main():
 	trainingDatas = readDatasFrom("datas/training.in")
 	validationDatas = readDatasFrom("datas/validation.in")
 	testDatas = readDatasFrom("datas/test.in")
-	#trainingDatas = testDatas
 
 	print("Start training")
 
-	network = LayerNetwork([784, 100, 10], CrossEntropyCost)
+	network = LayerNetwork([784, 30, 10], CrossEntropyCost)
 	monitor = StdOutputMonitor([
 		("testDatas", testDatas)
 	])
-	network.trainSGD(trainingDatas, 30, 10, 0.5, monitor)
+	network.trainSGD(trainingDatas, 60, batchSize = 10, learningRate = 0.1, regularization = 5, monitor = monitor)
 
 if __name__ == '__main__':
 	main()

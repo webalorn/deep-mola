@@ -1,3 +1,5 @@
+import datetime
+
 class DefaultMonitor:
 	"""
 		Helper for monitoring neural network progress.
@@ -23,7 +25,8 @@ class StdOutputMonitor(DefaultMonitor):
 	"""
 
 	def epochResult(self, iEpoch, successCount, datasetsCosts):
-		print("==> Epoch {} finished".format(iEpoch))
+		now = datetime.datetime.now()
+		print("==> Epoch {} finished [{}]".format(iEpoch, now.strftime("%H:%M:%S")))
 		for iDataset in range(len(successCount)):
 			print("Dataset {} has success rate of {}% and a cost of {}".format(
 				self.testNames[iDataset],
