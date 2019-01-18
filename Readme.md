@@ -1,13 +1,10 @@
 # DeepMola Neural Network (TIPE de prépa)
 
+## Requires:
+
+- `python3`
+- `numpy`
+
 ## Usage instructions
 
-To compile the programe, simply use the `make` command:
-```
-make
-```
-
-You can then start the program:
-```
-./deepMola
-```
+```python3 main.py```
