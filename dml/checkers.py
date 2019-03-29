@@ -5,31 +5,39 @@ from theano.ifelse import ifelse
 
 class BaseChecker():
 	"""
-		A checker must check the accuracy of a function (like a classifier),
-		and return a reak between 0 and 1, depending how well the function
-		answered. 0 stands for a false answer, 1 for the good one, and reals
-		between 0 and 1 for partially correct answers. It must check over one
-		example
+		A checker must check the accuracy of a function (like a classifier)
+		The checker is "feed" via <evaluate> and might then be used to
+		compute some metrixs as accuracy, or evaluate other datas
 	"""
-	def score(self, y, expected):
-		return 0
+
+	def __init__(self):
+		self.answers = []
 
 	def build(self):
 		pass
 
 
-class OneClassChecker():
-	def __init__(self):
-		y_batch = T.matrix()
-		expected_batch = T.matrix()
+class OneClassChecker(BaseChecker):
+	"""
+		Checker for classifiers that must output exaclty one class per output layer
+	"""
+	def checkLayer(self, output, expected):
+		return np.isclose(np.argmax(output, 1), np.argmax(expected, 1)).astype(int)
+
+	def evalute(self, nnet, datas):
+		runX, runY = datas
+		answers = nnet.runBatch(runX)
 		
-		self.compare = theano.scan(
-			fn = lambda y_t, expected_t : ifelse(T.eq(T.argmax(y_t), T.argmax(expected_t)), 1, 0),
-			sequences = [y_batch, expected_batch]
-		)
+		goodAnswers = np.array([self.checkLayer(y, y2) for y, y2 in zip(answers, runY)])
+		self.elementAccuracy = np.mean(goodAnswers, 0)
+		self.elementIsRight = np.isclose(self.elementAccuracy, 1)
+		self.nbElements = len(self.elementIsRight)
+		self.nbRightElems = np.count_nonzero(self.elementIsRight)
 
-	def build(self): # TODO: checker must have input tensors to build the function
-		self.checkBatch = theano.function([y_batch, expected_batch], self.compare)
+	def getAccuracyMetrics(self):
+		""" Return the number of example, the number of good answers, and the success rate """
+		return (self.nbElements, self.nbRightElems, self.nbRightElems / self.nbElements)
 
-	def score(self, y_layers, expected_layers):
-		return np.mean([self.checkBatch(y, ey) for y, ey in zip(y_layers, expected_layers)])
+	def getAccuracy(self):
+		""" Return the number of example, the number of good answers, and the success rate """
+		return self.nbRightElems / self.nbElements

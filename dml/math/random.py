@@ -1,10 +1,17 @@
 import numpy as np
 import theano
+import dml.math.activations as activations
 
 class RandomGenerator:
 	@classmethod
 	def create(cls):
 		pass
+
+	@classmethod
+	def getDefaultForActivation(cls, fct):
+		if fct == activations.sigmoid:
+			return NormalGen()
+		return None		
 
 
 class NormalGen(RandomGenerator):

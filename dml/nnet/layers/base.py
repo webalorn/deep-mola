@@ -18,8 +18,10 @@ class BaseLayer:
 		self.inputs = []
 		self.inputShape = tuple()
 		self.shape = None # Output shape ; The tensors will have one additional dimension for mini-batch
+		self.randomGen = randomGen
+		
 		self.params = [] # Learnable parameters, must be theano shared variables
-		self.randomGen = randomGen # TODO: default
+		self.regularized = []
 
 		self.addInput(inputs)
 

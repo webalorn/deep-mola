@@ -10,6 +10,7 @@ from dml.types import newBatchTensor
 from dml.math.cost import l2cost
 from dml.nnet.algos import GradientAlgo
 from dml.checkers import BaseChecker
+from dml.math.regularization import Regulator, L2regul
 
 
 class Network:
@@ -19,11 +20,13 @@ class Network:
 
 	def __init__(self, layers=[], outputs=[]):
 		self.layers = []
-		self.params = []  # Learnable parameters
 		self.inputLayers = []
 		self.outputLayers = []
 		self.built = False
 		self.checker = None
+
+		self.params = []  # Learnable parameters
+		self.regularized = [] # Parameters that can be regularized
 
 		self.add(layers)
 		self.addOutput(outputs)
@@ -50,6 +53,14 @@ class Network:
 	def build(self):
 		print("Start building network...")
 
+		# First, assign random generators to layers
+		for l in reversed(self.layers):
+			if l.randomGen:
+				for previous in l.inputs:
+					if previous.randomGen == None:
+						previous.randomGen = l.randomGen
+
+		# Build layers
 		for l in self.layers:
 			print("- Build layer...", type(l))
 			l.build(self)
@@ -57,13 +68,22 @@ class Network:
 				self.inputLayers.append(l)
 
 		self.params = [p for l in self.layers for p in l.params]
+		self.regularized = [p for l in self.layers for p in l.regularized]
+
+		self.inputTensors = [l.y for l in self.inputLayers]
 
 		self.outs = [l.y for l in self.outputLayers]
 		self.trainOuts = [l.train_y for l in self.outputLayers]
-		self.built = True
+
+		self.runNnetBatch = theano.function(
+			self.inputTensors,
+			self.outs,
+		)
 
 		if self.checker:
 			self.checker.build()
+
+		self.built = True
 
 	def rearange(self, oldEntries, newEntries, order):
 		for io in range(len(oldEntries)):
@@ -74,7 +94,7 @@ class Network:
 	def train(self, orderedTrainDatas, nbEpochs, batchSize=1,
 			loss=l2cost,
 			algo=GradientAlgo(1),
-			regularization=0, monitors=[]):
+			regul=0, monitors=[]):
 		"""
 			Train network using a given algorithm
 
@@ -99,14 +119,14 @@ class Network:
 
 		# Todo: auto-reshape if only one input / output layer
 		expectY = [newBatchTensor(l.shape) for l in self.outputLayers]
-		inputTensors = [l.y for l in self.inputLayers]
-		cost = sum([ loss[iLayer](yOut, expectY, batchSize) for iLayer, yOut in enumerate(self.trainOuts) ])
-		# TODO: regularization
+		cost = sum([loss[iLayer](yOut, expectY, batchSize) for iLayer, yOut in enumerate(self.trainOuts) ])
 
-		trainAlgo = algo.trainFct(cost, inputTensors, expectY, [trainX, trainY], batchSize, self.params)
+		if regul:
+			if not isinstance(regul, Regulator): # Default regularization is L2
+				regul = L2regul(regul)
+			cost += regul.cost(self.regularized) / batchSize
 
-		print(len(self.params), len(algo.grads))
-		print(self.params)
+		trainAlgo = algo.trainFct(cost, self.inputTensors, expectY, [trainX, trainY], batchSize, self.params)
 
 		print("Building finished, training begins")
 
@@ -123,14 +143,27 @@ class Network:
 			print(epochCost)
 
 			for m in monitors:
-				m.epochFinished(self, iEpoch)
+				m.epochFinished(self, iEpoch, epochCost)
+
+	def runBatch(self, inputDatas):
+		return self.runNnetBatch(*inputDatas)
+
+	def runSingleEntry(self, inputLayers):
+		"""
+			Make datas nested as a mini-batch of size 1 before running neural network
+		"""
+		batchInput = np.array([
+			np.array([inTensor]) for inTensor in inputLayers
+		])
+		return self.runBatch(batchInput)
 
 	def checkAccuracy(self, datas):
 		""" Test network accuracy """
 		if self.checker == None:
 			raise UsageError("No checker found")
-
-		# return self.checker.score(self.outs, ) # TODO
+		
+		self.checker.evalute(self, datas)
+		return self.checker.getAccuracy()
 
 	def loadFrom(self):
 		pass

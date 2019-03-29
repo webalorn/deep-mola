@@ -28,36 +28,8 @@ class GradientAlgo(TrainAlgo):
 			cost,
 			updates = self.updates,
 			givens = {
-				# **{ x : trainX[iLayer][batchBegin : batchEnd] for iLayer, x in enumerate(inputTensors) },
-				# **{ y : trainY[iLayer][batchBegin : batchEnd] for iLayer, y in enumerate(expectY) },
-				inputTensors[0] : trainX[0][batchBegin : batchEnd],
-				expectY[0] : trainY[0][batchBegin : batchEnd],
+				**{ x : trainX[iLayer][batchBegin : batchEnd] for iLayer, x in enumerate(inputTensors) },
+				**{ y : trainY[iLayer][batchBegin : batchEnd] for iLayer, y in enumerate(expectY) },
 			},
 		)
 		return gradientTrain
-
-		# gradientUpdate = theano.function(
-		# 	grads,
-		# 	grads,
-		# 	updates = updates
-		# )
-
-		# def miniBatchTrain(iBatch):
-		# 	batchCost, batchGrads = 0, []
-		# 	for iEx in range(iBatch*batchSize, (iBatch+1)*batchSize):
-		# 		c, g = gradientTrain(iEx)
-		# 		if i == 0:
-		# 			batchCost, batchGrads = c, g
-		# 		else:
-		# 			batchCost += c
-		# 			batchGrads += g
-		# 	batchCost /= batchSize
-
-		# 	for el in batchGrads:
-		# 		el /= batchSize
-
-		# 	gradientUpdate(*batchGrads)
-
-		# 	return sum(gradientTrain) / batchSize
-
-		# return miniBatchTrain

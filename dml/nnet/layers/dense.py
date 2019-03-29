@@ -35,6 +35,7 @@ class DenseLayer(BaseLayer):
 			name="dense biases",
 		)
 		self.params = [self.weights, self.biases]
+		self.regularized = [self.weights]
 
 	def buildOutput(self, x):
 		return T.dot(x, self.weights) + self.biases
