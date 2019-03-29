@@ -2,13 +2,14 @@ import numpy as np
 import theano
 import theano.tensor as T
 
-from dml.types import newTensor
 from dml.excepts import BuildError
 from dml.math.random import NormalGen
 
 class BaseLayer:
 	"""
 		Abstract class for methods common to all layers
+
+		All computations must be done with for a mini-batch (mini-batch size will be one if there's only one input)
 	"""
 	nbInputs = 1 # None stand for an undefined number of inputs
 
@@ -16,7 +17,7 @@ class BaseLayer:
 		self.built = False
 		self.inputs = []
 		self.inputShape = tuple()
-		self.shape = tuple() # Output shape
+		self.shape = None # Output shape ; The tensors will have one additional dimension for mini-batch
 		self.params = [] # Learnable parameters, must be theano shared variables
 		self.randomGen = randomGen # TODO: default
 
@@ -37,7 +38,9 @@ class BaseLayer:
 			raise BuildError("No method for computing input shape with multiple inputs")
 
 	def computeOutputShape(self):
-		self.shape = self.inputShape # By default, the output shape will be the same as input
+		# The tensors will have one additional dimension for mini-batch
+		if self.shape == None:
+			self.shape = self.inputShape # By default, the output shape will be the same as input
 
 	def buildInput(self):
 		if self.nbInputs == 0:

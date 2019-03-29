@@ -12,7 +12,7 @@ class DenseLayer(BaseLayer):
 	"""
 
 	def __init__(self, outputSize, *args, **kwargs):
-		super().__init__(shape, *args, **kwargs)
+		super().__init__(*args, **kwargs)
 		self.outputSize = outputSize
 
 	def computeOutputShape(self):
@@ -25,12 +25,14 @@ class DenseLayer(BaseLayer):
 
 	def buildInternal(self):
 		self.weights = theano.shared(
-			self.randomGen.create(shape=(self.inputShape[0]), self.shape[0], inSize=self.inputShape[0]),
+			self.randomGen.create(shape=(self.inputShape[0], self.shape[0]), inSize=self.inputShape[0]),
 			borrow=True,
+			name="dense weights",
 		)
 		self.biases = theano.shared(
-			self.randomGen.create(shape=(self.shape[0])),
+			self.randomGen.create(shape=(self.shape[0],)),
 			borrow=True,
+			name="dense biases",
 		)
 		self.params = [self.weights, self.biases]
 

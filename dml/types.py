@@ -30,3 +30,6 @@ def newTensor(shape, *args, **kwargs):
 		return T.tensor5(*args, **kwargs)
 	else:
 		raise BuildError("No tensor with such shape implemented")
+
+def newBatchTensor(shape, *args, **kwargs):
+	return newTensor((None,) + shape, *args, **kwargs)

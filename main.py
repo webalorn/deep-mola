@@ -3,20 +3,35 @@ from dml.nnet.layers.input import InputLayer
 from dml.nnet.layers.dense import DenseLayer
 from dml.nnet.layers.activation import ActivationLayer
 from dml.math.activations import sigmoid
+from dml.nnet.algos import GradientAlgo
+from dml.checkers import OneClassChecker
+
+import numpy as np
+import theano
+
+# theano.config.optimizer = 'None'
+# theano.config.scan.debug = True
+# theano.config.mode = 'DebugMode'
+# theano.config.exception_verbosity = 'high'
 
 def readDatasFrom(filename):
 	with open(filename, 'r') as infile:
 		lines = infile.readlines()
 	nbEntries = int(lines[0])
-	return [
-		(
-			np.array(list(map(float, lines[l].split()))),
-			np.array(list(map(float, lines[l+1].split()))),
-		) for l in range(1, len(lines)-1, 2)
-	]
+	x, y = [], []
+
+	for l in range(1, len(lines)-1, 2):
+		x.append(
+			np.array(list(map(float, lines[l].split())))
+		)
+		y.append(
+			np.array(list(map(float, lines[l+1].split())))
+		)
+
+	return [np.array([np.array(x)]), np.array([np.array(y)])]
 
 def main():
-	net = Sequential([
+	network = Sequential([
 		InputLayer(784),
 		DenseLayer(30),
 		ActivationLayer(sigmoid),
@@ -24,13 +39,22 @@ def main():
 		ActivationLayer(sigmoid),
 	])
 
-	nnet.build()
+	network.setChecker(OneClassChecker())
 
-	trainingDatas = readDatasFrom("datas/training.in")
+	network.build()
+
+	print("=> Network built !")
+
+	print("Read datas...")
+	trainingDatas = readDatasFrom("datas/validation.in")
+	# trainingDatas = readDatasFrom("datas/training.in")
 	# validationDatas = readDatasFrom("datas/validation.in")
 	# testDatas = readDatasFrom("datas/test.in")
 
-	nnet.train(trainingDatas, 10, algo = gradientAlgo(0.2))
+	print("Start training")
+	network.train(trainingDatas, 10, algo = GradientAlgo(0.2))
+
+	# TODO : monitors
 
 # from dml.layerNetwork import LayerNetwork
 # from dml.mlmath import L2Cost, CrossEntropyCost

@@ -1,5 +1,5 @@
 from dml.nnet.layers.base import BaseLayer
-from dml.types import newTensor
+from dml.types import newBatchTensor
 
 class InputLayer(BaseLayer):
 	"""
@@ -8,13 +8,14 @@ class InputLayer(BaseLayer):
 	nbInputs = 0
 
 	def __init__(self, shape, *args, **kwargs):
-		super().__init__(shape, *args, **kwargs)
+		super().__init__(*args, **kwargs)
 		if isinstance(shape, int):
 			shape = (shape, )
+
 		self.shape = shape
 
-	def computeOutputShape(self):
-		pass # Set by __init__
+	def buildInternal(self):
+		self.inputTensor = newBatchTensor(self.shape, "inputTensor")
 
-	def buildOutput(self):
-		self.y = newTensor(self.shape)
+	def buildOutput(self, x):
+		return self.inputTensor

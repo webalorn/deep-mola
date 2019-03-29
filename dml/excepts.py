@@ -3,3 +3,6 @@ class BuildError(Exception):
 
 class ShapeError(Exception):
 	pass
+
+class UsageError(Exception):
+	pass

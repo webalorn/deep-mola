@@ -6,7 +6,7 @@ class ActivationLayer(BaseLayer):
 	"""
 
 	def __init__(self, activation, *args, **kwargs):
-		super().__init__(shape, *args, **kwargs)
+		super().__init__(*args, **kwargs)
 		self.activation = activation
 
 	def buildOutput(self, x):
