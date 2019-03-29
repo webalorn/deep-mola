@@ -29,7 +29,7 @@ class StdOutputMonitor(DefaultMonitor):
 			nnet.checker.evalute(nnet, datas)
 			total, success, rate = nnet.checker.getAccuracyMetrics()
 
-			print("Dataset {} has success rate of {}% : {} sur {}".format(
+			print("Dataset {} has success rate of {:.2f}% : {} sur {}".format(
 				name,
 				rate * 100,
 				success,

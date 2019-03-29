@@ -29,7 +29,7 @@ def readDatasFrom(filename):
 			np.array(list(map(float, lines[l+1].split())))
 		)
 
-	return [np.array([np.array(x)]), np.array([np.array(y)])]
+	return [np.array(x), np.array(y)]
 
 def main():
 	network = Sequential([

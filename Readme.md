@@ -4,6 +4,7 @@
 
 - `python3`
 - `numpy`
+- `theano`
 
 ## Usage instructions
 

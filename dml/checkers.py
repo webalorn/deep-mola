@@ -25,8 +25,10 @@ class OneClassChecker(BaseChecker):
 		return np.isclose(np.argmax(output, 1), np.argmax(expected, 1)).astype(int)
 
 	def evalute(self, nnet, datas):
+		datas = nnet.reshapeDatas(datas)
 		runX, runY = datas
-		answers = nnet.runBatch(runX)
+		
+		answers = nnet.runBatch(runX, forceMultMode = True)
 		
 		goodAnswers = np.array([self.checkLayer(y, y2) for y, y2 in zip(answers, runY)])
 		self.elementAccuracy = np.mean(goodAnswers, 0)

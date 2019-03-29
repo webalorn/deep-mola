@@ -28,6 +28,10 @@ class Network:
 		self.params = []  # Learnable parameters
 		self.regularized = [] # Parameters that can be regularized
 
+		# If set to false, datas should have the shape <input> / <output> = [<tensor>] * nbExamples
+		self.multipleInputsMode = False
+		self.multipleOutputsMode = False
+
 		self.add(layers)
 		self.addOutput(outputs)
 
@@ -49,6 +53,14 @@ class Network:
 		if not isinstance(checker, BaseChecker):
 			raise UsageError("Checker must be an instance of BaseChecker")
 		self.checker = checker
+
+	def reshapeDatas(self, datas):
+		dataX, dataY = datas
+		if not self.multipleInputsMode:
+			dataX = np.array([dataX])
+		if not self.multipleOutputsMode:
+			dataY = np.array([dataY])
+		return [dataX, dataY]
 
 	def build(self):
 		print("Start building network...")
@@ -74,6 +86,11 @@ class Network:
 
 		self.outs = [l.y for l in self.outputLayers]
 		self.trainOuts = [l.train_y for l in self.outputLayers]
+
+		if len(self.inputTensors) > 1:
+			self.multipleInputsMode = True
+		if len(self.outs) > 1:
+			self.multipleOutputsMode = True
 
 		self.runNnetBatch = theano.function(
 			self.inputTensors,
@@ -105,6 +122,7 @@ class Network:
 		if not self.built:
 			raise BuildError("Layer not already built")
 
+		orderedTrainDatas = self.reshapeDatas(orderedTrainDatas)
 		trainDatas = deepcopy(orderedTrainDatas)  # For in-place shuffle
 		trainX = theano.shared(trainDatas[0], name="trainX") # To allow theano functions to access traning datas
 		trainY = theano.shared(trainDatas[1], name="trainY")
@@ -117,7 +135,6 @@ class Network:
 		if not isinstance(monitors, list):
 			monitors = [monitors]
 
-		# Todo: auto-reshape if only one input / output layer
 		expectY = [newBatchTensor(l.shape) for l in self.outputLayers]
 		cost = sum([loss[iLayer](yOut, expectY, batchSize) for iLayer, yOut in enumerate(self.trainOuts) ])
 
@@ -145,23 +162,36 @@ class Network:
 			for m in monitors:
 				m.epochFinished(self, iEpoch, epochCost)
 
-	def runBatch(self, inputDatas):
-		return self.runNnetBatch(*inputDatas)
+	def runBatch(self, inputDatas, forceMultMode = False):
+		if not self.multipleInputsMode and not forceMultMode:
+			inputDatas = np.array([inputDatas])
 
-	def runSingleEntry(self, inputLayers):
+		output = self.runNnetBatch(*inputDatas)
+		
+		if not self.multipleOutputsMode and not forceMultMode:
+			return output[0]
+		return output
+
+	def runSingleEntry(self, inputLayers, forceMultMode = False):
 		"""
 			Make datas nested as a mini-batch of size 1 before running neural network
 		"""
+		if not self.multipleInputsMode and not forceMultMode:
+			inputLayers = np.array([inputLayers])
 		batchInput = np.array([
 			np.array([inTensor]) for inTensor in inputLayers
 		])
-		return self.runBatch(batchInput)
+		output = np.array([l[0] for l in self.runBatch(batchInput, forceMultMode = True)])
+
+		if not self.multipleOutputsMode and not forceMultMode:
+			return output[0]
+		return output
 
 	def checkAccuracy(self, datas):
 		""" Test network accuracy """
 		if self.checker == None:
 			raise UsageError("No checker found")
-		
+
 		self.checker.evalute(self, datas)
 		return self.checker.getAccuracy()
 
