@@ -146,6 +146,8 @@ class Network:
 		trainAlgo = algo.trainFct(cost, self.inputTensors, expectY, [trainX, trainY], batchSize, self.params)
 
 		print("Building finished, training begins")
+		for m in monitors:
+			m.startTraining(nbEpochs)
 
 		for iEpoch in range(nbEpochs):
 			print("Epoch", iEpoch)
@@ -157,10 +159,10 @@ class Network:
 				trainCost = trainAlgo(iBatch)
 				epochCost += trainCost
 
-			print(epochCost)
-
 			for m in monitors:
 				m.epochFinished(self, iEpoch, epochCost)
+		for m in monitors:
+			m.trainingFinished()
 
 	def runBatch(self, inputDatas, forceMultMode = False):
 		if not self.multipleInputsMode and not forceMultMode:

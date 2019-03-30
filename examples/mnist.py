@@ -7,7 +7,7 @@ from dml.math.activations import *
 from dml.math.cost import *
 from dml.nnet.algos import GradientAlgo
 from dml.checkers import OneClassChecker
-from dml.tools.monitors import StdOutputMonitor 
+from dml.tools.monitors import * 
 
 import numpy as np
 import theano
@@ -80,9 +80,9 @@ def main():
 		nbEpochs = 30,
 		batchSize = 10,
 		algo = GradientAlgo(0.5),
-		monitors = StdOutputMonitor([
+		monitors = GraphicMonitor([
 			("validation", validationDatas),
-			# ("test", testDatas),
+			("test", testDatas),
 		]),
 		regul = 0.000,
 		loss = logLikelihoodCost# binCrossEntropyCost
