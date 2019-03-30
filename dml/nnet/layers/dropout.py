@@ -20,4 +20,7 @@ class Dropout(BaseLayer):
 		self.mask = randGen.binomial(n=1, p=1-self.dropRate, size=self.train_x.shape)
 
 	def buildTrainOutput(self, x):
-		return x * T.cast(self.mask, theano.config.floatX)
+		return x * T.cast(self.mask, theano.config.floatX) # / (1-self.dropRate)
+
+	def buildOutput(self, x):
+		return x * (1 - self.dropRate)

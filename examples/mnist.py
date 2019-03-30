@@ -3,7 +3,8 @@ from dml.nnet.layers.input import InputLayer
 from dml.nnet.layers.dense import DenseLayer
 from dml.nnet.layers.dropout import Dropout
 from dml.nnet.layers.activation import Activation
-from dml.math.activations import sigmoid
+from dml.math.activations import *
+from dml.math.cost import *
 from dml.nnet.algos import GradientAlgo
 from dml.checkers import OneClassChecker
 from dml.tools.monitors import StdOutputMonitor 
@@ -38,13 +39,17 @@ def main():
 	network = Sequential([
 		InputLayer(784),
 
+		# DenseLayer(400),
+		# Activation(weakReLU),
+		# Dropout(0.5),
+
 		DenseLayer(200),
-		Activation(sigmoid),
-		# Dropout(0.3),
+		Activation(weakReLU),
+		# Dropout(0.5),
 
 		DenseLayer(100),
-		Activation(sigmoid),
 		# Dropout(0.5),
+		Activation(weakReLU),
 
 		DenseLayer(10),
 		Activation(sigmoid),
@@ -57,13 +62,17 @@ def main():
 	print("=> Network built !")
 
 	print("Read datas...")
-	trainingDatas = readDatasFrom("datas/mnist/training.in")
-	validationDatas = readDatasFrom("datas/mnist/validation.in")
-	testDatas = readDatasFrom("datas/mnist/test.in")
 
-	# trainingDatas = readDatasFrom("datas/mnist/test.in")
-	# testDatas = trainingDatas
-	# validationDatas = trainingDatas
+	quickTest = False
+
+	if not quickTest:
+		trainingDatas = readDatasFrom("datas/mnist/training.in")
+		validationDatas = readDatasFrom("datas/mnist/validation.in")
+		testDatas = readDatasFrom("datas/mnist/test.in")
+	else:
+		trainingDatas = readDatasFrom("datas/mnist/test.in")
+		testDatas = trainingDatas
+		validationDatas = trainingDatas
 
 	print("Start training")
 	network.train(
@@ -75,7 +84,8 @@ def main():
 			("validation", validationDatas),
 			# ("test", testDatas),
 		]),
-		regul = 0.00
+		regul = 0.000,
+		loss = binCrossEntropyCost
 	)
 
 if __name__ == '__main__':

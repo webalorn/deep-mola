@@ -136,7 +136,7 @@ class Network:
 			monitors = [monitors]
 
 		expectY = [newBatchTensor(l.shape) for l in self.outputLayers]
-		cost = sum([loss[iLayer](yOut, expectY, batchSize) for iLayer, yOut in enumerate(self.trainOuts) ])
+		cost = sum([loss[iLayer](yOut, expectY[iLayer], batchSize) for iLayer, yOut in enumerate(self.trainOuts) ])
 
 		if regul:
 			if not isinstance(regul, Regulator): # Default regularization is L2
