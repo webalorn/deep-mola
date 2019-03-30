@@ -30,7 +30,10 @@ class OneClassChecker(BaseChecker):
 		
 		answers = nnet.runBatch(runX, forceMultMode = True)
 		
-		goodAnswers = np.array([self.checkLayer(y, y2) for y, y2 in zip(answers, runY)])
+		goodAnswers = np.array(
+			[self.checkLayer(y, y2) for y, y2 in zip(answers, runY)],
+			dtype=theano.config.floatX
+		)
 		self.elementAccuracy = np.mean(goodAnswers, 0)
 		self.elementIsRight = np.isclose(self.elementAccuracy, 1)
 		self.nbElements = len(self.elementIsRight)

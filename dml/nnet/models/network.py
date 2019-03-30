@@ -57,9 +57,9 @@ class Network:
 	def reshapeDatas(self, datas):
 		dataX, dataY = datas
 		if not self.multipleInputsMode:
-			dataX = np.array([dataX])
+			dataX = np.array([dataX], dtype=theano.config.floatX)
 		if not self.multipleOutputsMode:
-			dataY = np.array([dataY])
+			dataY = np.array([dataY], dtype=theano.config.floatX)
 		return [dataX, dataY]
 
 	def build(self):
@@ -164,10 +164,10 @@ class Network:
 
 	def runBatch(self, inputDatas, forceMultMode = False):
 		if not self.multipleInputsMode and not forceMultMode:
-			inputDatas = np.array([inputDatas])
+			inputDatas = np.array([inputDatas], dtype=theano.config.floatX)
 
 		output = self.runNnetBatch(*inputDatas)
-		
+
 		if not self.multipleOutputsMode and not forceMultMode:
 			return output[0]
 		return output
@@ -177,11 +177,14 @@ class Network:
 			Make datas nested as a mini-batch of size 1 before running neural network
 		"""
 		if not self.multipleInputsMode and not forceMultMode:
-			inputLayers = np.array([inputLayers])
+			inputLayers = np.array([inputLayers], dtype=theano.config.floatX)
 		batchInput = np.array([
 			np.array([inTensor]) for inTensor in inputLayers
-		])
-		output = np.array([l[0] for l in self.runBatch(batchInput, forceMultMode = True)])
+		], dtype=theano.config.floatX)
+		output = np.array(
+			[l[0] for l in self.runBatch(batchInput, forceMultMode = True)],
+			dtype=theano.config.floatX,
+		)
 
 		if not self.multipleOutputsMode and not forceMultMode:
 			return output[0]

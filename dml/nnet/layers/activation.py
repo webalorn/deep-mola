@@ -1,7 +1,7 @@
 from dml.nnet.layers.base import BaseLayer
 from dml.math.random import RandomGenerator
 
-class ActivationLayer(BaseLayer):
+class Activation(BaseLayer):
 	"""
 		The DenseLayer is a fully-connected layer
 	"""
