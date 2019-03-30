@@ -81,7 +81,7 @@ class BaseLayer:
 				raise BuildError("Previous layer not built")
 
 		if self.randomGen == None:
-			self.randomGen = NormalGen
+			self.randomGen = NormalGen()
 
 		self.network = network
 

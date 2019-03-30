@@ -52,7 +52,7 @@ def main():
 		Activation(weakReLU),
 
 		DenseLayer(10),
-		Activation(sigmoid),
+		Activation(softmax),
 	])
 
 	network.setChecker(OneClassChecker())
@@ -85,7 +85,7 @@ def main():
 			# ("test", testDatas),
 		]),
 		regul = 0.000,
-		loss = binCrossEntropyCost
+		loss = logLikelihoodCost# binCrossEntropyCost
 	)
 
 if __name__ == '__main__':
