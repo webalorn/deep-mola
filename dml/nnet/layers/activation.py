@@ -3,7 +3,7 @@ from dml.math.random import RandomGenerator
 
 class Activation(BaseLayer):
 	"""
-		The DenseLayer is a fully-connected layer
+		The Activation layer apply a function on each of the inputs
 	"""
 
 	def __init__(self, activation, *args, **kwargs):

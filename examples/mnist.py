@@ -1,8 +1,6 @@
 from dml.nnet.models.sequential import Sequential
 from dml.nnet.layers.input import InputLayer
-from dml.nnet.layers.dense import DenseLayer
-from dml.nnet.layers.dropout import Dropout
-from dml.nnet.layers.activation import Activation
+from dml.nnet.layers import *
 from dml.math.activations import *
 from dml.math.cost import *
 from dml.nnet.algos import GradientAlgo
@@ -27,7 +25,9 @@ def readDatasFrom(filename):
 
 	for l in range(1, len(lines)-1, 2):
 		x.append(
-			np.array(list(map(float, lines[l].split())), dtype=theano.config.floatX),
+			np.array(
+				list(map(float, lines[l].split())), dtype=theano.config.floatX
+			).reshape(28, 28),
 		)
 		y.append(
 			np.array(list(map(float, lines[l+1].split())), dtype=theano.config.floatX)
@@ -37,21 +37,18 @@ def readDatasFrom(filename):
 
 def main():
 	network = Sequential([
-		InputLayer(784),
+		InputLayer((28, 28)),
+		Flatten(),
 
-		# DenseLayer(400),
-		# Activation(weakReLU),
-		# Dropout(0.5),
-
-		DenseLayer(200),
+		Dense(200),
 		Activation(weakReLU),
 		# Dropout(0.5),
 
-		DenseLayer(100),
+		Dense(100),
 		# Dropout(0.5),
 		Activation(weakReLU),
 
-		DenseLayer(10),
+		Dense(10),
 		Activation(softmax),
 	])
 
@@ -63,7 +60,7 @@ def main():
 
 	print("Read datas...")
 
-	quickTest = False
+	quickTest = True
 
 	if not quickTest:
 		trainingDatas = readDatasFrom("datas/mnist/training.in")
@@ -80,7 +77,7 @@ def main():
 		nbEpochs = 30,
 		batchSize = 10,
 		algo = GradientAlgo(0.5),
-		monitors = GraphicMonitor([
+		monitors = StdOutputMonitor([
 			("validation", validationDatas),
 			("test", testDatas),
 		]),

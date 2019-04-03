@@ -8,7 +8,7 @@ from dml.excepts import BuildError
 
 class Dropout(BaseLayer):
 	"""
-		The DenseLayer is a fully-connected layer
+		The Dropout randomly remove a choosen number of it's inputs
 	"""
 
 	def __init__(self, dropRate, *args, **kwargs):

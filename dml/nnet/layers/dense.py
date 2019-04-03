@@ -6,9 +6,9 @@ from dml.nnet.layers.base import BaseLayer
 from dml.types import isVectorShape
 from dml.excepts import BuildError
 
-class DenseLayer(BaseLayer):
+class Dense(BaseLayer):
 	"""
-		The DenseLayer is a fully-connected layer
+		The Dense layer is a fully-connected layer
 	"""
 
 	def __init__(self, outputSize, *args, **kwargs):

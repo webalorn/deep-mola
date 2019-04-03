@@ -74,8 +74,6 @@ class GraphicMonitor(StdOutputMonitor):
 			self.plt.plot(x, y, label=name)
 
 		self.plt.legend(loc='lower right')
-		self.plt.draw()
-		self.plt.show()
 		self.plt.pause(0.01)
 
 	def startTraining(self, maxEpochs):
