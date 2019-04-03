@@ -8,7 +8,7 @@ from dml.excepts import *
 from dml.nnet.layers.input import InputLayer
 from dml.types import newBatchTensor
 from dml.math.cost import l2cost
-from dml.nnet.algos import GradientAlgo
+from dml.algos import GradientAlgo
 from dml.checkers import BaseChecker
 from dml.math.regularization import Regulator, L2regul
 

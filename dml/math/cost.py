@@ -18,6 +18,6 @@ def logLikelihoodCost(netY, expectedY):
 		expectedY elements must be tensors with exaclty one '1', and zeros
 	"""
 	elems = netY * expectedY
-	elems = T.switch(T.isclose(expectedY, 0), 1, elems)
+	elems = T.switch(T.isclose(expectedY, 0), 1, elems) # '1' will become 0 within the log function
 	elems = T.switch(T.isclose(elems, 0), elems + 1e-6, elems)
 	return -T.mean(T.log(elems))

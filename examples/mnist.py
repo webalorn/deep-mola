@@ -1,9 +1,7 @@
-from dml.nnet.models.sequential import Sequential
-from dml.nnet.layers.input import InputLayer
+from dml.nnet.models import Sequential
 from dml.nnet.layers import *
-from dml.math.activations import *
-from dml.math.cost import *
-from dml.nnet.algos import GradientAlgo
+from dml.math import *
+from dml.algos import GradientAlgo
 from dml.checkers import OneClassChecker
 from dml.tools.monitors import * 
 
@@ -82,7 +80,7 @@ def main():
 			("test", testDatas),
 		]),
 		regul = 0.000,
-		loss = logLikelihoodCost# binCrossEntropyCost
+		loss = logLikelihoodCost# 
 	)
 
 if __name__ == '__main__':

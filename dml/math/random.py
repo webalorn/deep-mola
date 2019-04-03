@@ -1,6 +1,6 @@
 import numpy as np
 import theano
-import dml.math.activations as acts
+from . import activations as acts
 
 class RandomGenerator:
 	@classmethod
