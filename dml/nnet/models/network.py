@@ -42,6 +42,7 @@ class Network(Storable):
 				self.add(l)
 		else:
 			self.layers.append(layer)
+		return layer
 
 	def addOutput(self, layer):
 		if isinstance(layer, list):
@@ -49,6 +50,7 @@ class Network(Storable):
 				self.addOutput(l)
 		else:
 			self.outputLayers.append(layer)
+		return layer
 
 	def setChecker(self, checker):
 		if not isinstance(checker, BaseChecker) and checker != None:

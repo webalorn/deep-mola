@@ -1,7 +1,7 @@
 from dml.nnet.models import Sequential
 from dml.nnet.layers import *
 from dml.math import *
-from dml.algos import GradientAlgo
+from dml.algos import *
 from dml.checkers import OneClassChecker
 from dml.tools.monitors import * 
 from pprint import pprint
@@ -35,7 +35,8 @@ def readDatasFrom(filename):
 	return [np.array(x), np.array(y)]
 
 def main():
-	fromFile = True
+	fromFile = False
+	quickTest = False
 
 	if fromFile:
 		network = Sequential.loadFrom('datas/saves/mnist.dmm')
@@ -68,7 +69,6 @@ def main():
 
 	print("Read datas...")
 
-	quickTest = True
 
 	if not quickTest:
 		trainingDatas = readDatasFrom("datas/mnist/training.in")
@@ -84,7 +84,7 @@ def main():
 		trainingDatas,
 		nbEpochs = 30,
 		batchSize = 10,
-		algo = GradientAlgo(0.5),
+		algo = RMSprop(10 * 1e-4, 0.95),
 		monitors = StdOutputMonitor([
 			("validation", validationDatas),
 			("test", testDatas),
