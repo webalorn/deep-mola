@@ -4,6 +4,7 @@ from dml.math import *
 from dml.algos import GradientAlgo
 from dml.checkers import OneClassChecker
 from dml.tools.monitors import * 
+from pprint import pprint
 
 import numpy as np
 import theano
@@ -34,23 +35,32 @@ def readDatasFrom(filename):
 	return [np.array(x), np.array(y)]
 
 def main():
-	network = Sequential([
-		InputLayer((28, 28)),
-		Flatten(),
+	fromFile = True
 
-		Dense(200),
-		Activation(weakReLU),
-		# Dropout(0.5),
+	if fromFile:
+		network = Sequential.loadFrom('datas/saves/mnist.dmm')
+	else:
+		network = Sequential([
+			InputLayer((28, 28)),
+			Flatten(),
 
-		Dense(100),
-		# Dropout(0.5),
-		Activation(weakReLU),
+			Dense(200),
+			Activation(weakReLU),
+			# Dropout(0.5),
 
-		Dense(10),
-		Activation(softmax),
-	])
+			Dense(100),
+			# Dropout(0.5),
+			Activation(weakReLU),
 
-	network.setChecker(OneClassChecker())
+			Dense(10),
+			Activation(softmax),
+		])
+
+		network.setChecker(OneClassChecker())
+
+		# network.build()
+		network.saveTo('datas/saves/mnist.dmm')
+		# return 0
 
 	network.build()
 

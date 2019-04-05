@@ -19,3 +19,7 @@ class InputLayer(BaseLayer):
 
 	def buildOutput(self, x):
 		return self.inputTensor
+
+	@classmethod
+	def serialGetParams(cls, datas):
+		return {'shape': tuple(datas['shape'])}

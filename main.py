@@ -11,7 +11,6 @@ def main():
 	modulename = 'examples.' + name
 
 	example = __import__(modulename)
-	print(modulename, example)
 	example.__getattribute__(name).main()
 
 if __name__ == '__main__':

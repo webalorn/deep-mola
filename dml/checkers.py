@@ -2,8 +2,9 @@ import numpy as np
 import theano
 import theano.tensor as T
 from theano.ifelse import ifelse
+from dml.tools.store import Serializable
 
-class BaseChecker():
+class BaseChecker(Serializable):
 	"""
 		A checker must check the accuracy of a function (like a classifier)
 		The checker is "feed" via <evaluate> and might then be used to

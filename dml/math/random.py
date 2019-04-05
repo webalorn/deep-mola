@@ -1,8 +1,9 @@
 import numpy as np
 import theano
 from . import activations as acts
+from dml.tools.store import Serializable
 
-class RandomGenerator:
+class RandomGenerator(Serializable):
 	@classmethod
 	def create(cls):
 		pass
@@ -32,3 +33,14 @@ class NormalGen(RandomGenerator):
 			),
 			dtype = theano.config.floatX,
 		)
+
+	@classmethod
+	def serialGetParams(cls, datas):
+		return {'k': datas['k'], 'center': datas['center']}
+
+	def serialize(self):
+		return {
+			**super().serialize(),
+			'k' : self.k,
+			'center': self.center,
+		}

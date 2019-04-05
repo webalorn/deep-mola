@@ -2,4 +2,4 @@
 *.dSYM
 *.DS_Store
 datas/*
-*/__pycache__/*
+*__pycache__*

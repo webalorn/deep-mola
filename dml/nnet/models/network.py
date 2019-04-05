@@ -11,9 +11,10 @@ from dml.math.cost import l2cost
 from dml.algos import GradientAlgo
 from dml.checkers import BaseChecker
 from dml.math.regularization import Regulator, L2regul
+from dml.tools.store import Storable, recreateObject
 
 
-class Network:
+class Network(Storable):
 	"""
 		Represents a neural network with it's inputs, outputs and layers
 	"""
@@ -50,7 +51,7 @@ class Network:
 			self.outputLayers.append(layer)
 
 	def setChecker(self, checker):
-		if not isinstance(checker, BaseChecker):
+		if not isinstance(checker, BaseChecker) and checker != None:
 			raise UsageError("Checker must be an instance of BaseChecker")
 		self.checker = checker
 
@@ -200,8 +201,27 @@ class Network:
 		self.checker.evalute(self, datas)
 		return self.checker.getAccuracy()
 
-	def loadFrom(self):
-		pass
+	def serialize(self):
+		for i, l in enumerate(self.layers):
+			l._serialId = i
 
-	def save(self):
-		pass
+		return {
+			**super().serialize(),
+			'multipleInputsMode': self.multipleInputsMode,
+			'multipleOutputsMode': self.multipleOutputsMode,
+			'layers': [l.serialize() for l in self.layers],
+			'inputLayers': [l._serialId for l in self.inputLayers],
+			'outputLayers': [l._serialId for l in self.outputLayers],
+			'checker': None if not self.checker else self.checker.serialize(),
+		}
+
+	def repopulate(self, datas):
+		self.layers = [recreateObject(l) for l in datas['layers']]
+		for l in self.layers:
+			l.repopulateFromNNet(self)
+
+		self.inputLayers = [self.layers[i] for i in datas['inputLayers']]
+		self.outputLayers = [self.layers[i] for i in datas['outputLayers']]
+		self.checker = recreateObject(datas['checker'])
+		self.multipleInputsMode = datas['multipleInputsMode']
+		self.multipleOutputsMode = datas['multipleOutputsMode']

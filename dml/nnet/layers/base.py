@@ -4,8 +4,9 @@ import theano.tensor as T
 
 from dml.excepts import BuildError
 from dml.math.random import NormalGen
+from dml.tools.store import Serializable, recreateObject
 
-class BaseLayer:
+class BaseLayer(Serializable):
 	"""
 		Abstract class for methods common to all layers
 
@@ -94,3 +95,24 @@ class BaseLayer:
 		self.train_y = self.buildTrainOutput(self.train_x)
 
 		self.built = True
+
+	def serialize(self):
+		return {
+			**super().serialize(),
+			'inputs': [l._serialId for l in self.inputs],
+			'inputShape': self.inputShape,
+			'shape': self.shape,
+			'randomGen': self.randomGen.serialize() if self.randomGen else None,
+		}
+
+	def repopulate(self, datas):
+		self.inputs = tuple(datas['inputs'])
+		self.inputShape = tuple(datas['inputShape'])
+		self.shape = tuple(datas['shape']) if datas['shape'] else None
+		self.randomGen = recreateObject(datas['randomGen'])
+
+	def repopulateFromNNet(self, nnet):
+		"""
+			Use the nnet objet to finish the layer reconstruction
+		"""
+		self.inputs = [nnet.layers[i] for i in self.inputs]
