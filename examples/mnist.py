@@ -43,16 +43,22 @@ def main():
 	else:
 		network = Sequential([
 			InputLayer((28, 28)),
+
+			Convolution2D((5, 5), 20, noInChannels=True),
+			MaxPool((2, 2)),
+			Activation(weakReLU),
+
+			Convolution2D((5, 5), 40),
+			MaxPool((2, 2)),
+			Activation(weakReLU),
+
 			Flatten(),
 
 			Dense(200),
 			Activation(weakReLU),
-			# Dropout(0.5),
 
 			Dense(100),
-			# Dropout(0.5),
 			Activation(weakReLU),
-
 			Dense(10),
 			Activation(softmax),
 		])
@@ -60,7 +66,7 @@ def main():
 		network.setChecker(OneClassChecker())
 
 		# network.build()
-		network.saveTo('datas/saves/mnist.dmm')
+		# network.saveTo('datas/saves/mnist.dmm')
 		# return 0
 
 	network.build()
@@ -82,9 +88,9 @@ def main():
 	print("Start training")
 	network.train(
 		trainingDatas,
-		nbEpochs = 30,
-		batchSize = 10,
-		algo = RMSprop(10 * 1e-4, 0.95),
+		nbEpochs = 40,
+		batchSize = 60,
+		algo = MomentumGradient(0.03),
 		monitors = StdOutputMonitor([
 			("validation", validationDatas),
 			("test", testDatas),

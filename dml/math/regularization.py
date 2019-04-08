@@ -10,4 +10,4 @@ class L2regul(Regulator):
 		self.regulRate = regulRate
 
 	def cost(self, params):
-		return sum([(p ** 2).sum() for p in params]) * self.regulRate * 0.5
+		return sum([T.sqr(p).sum() for p in params]) * self.regulRate * 0.5

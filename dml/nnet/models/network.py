@@ -66,6 +66,10 @@ class Network(Storable):
 		return [dataX, dataY]
 
 	def build(self):
+		"""
+			Build two or more times the same network is currently not supported.
+			Do not add layers or try to re-build the layer after it has been built.
+		"""
 		print("Start building network...")
 
 		# First, assign random generators to layers
@@ -200,7 +204,7 @@ class Network(Storable):
 		if self.checker == None:
 			raise UsageError("No checker found")
 
-		self.checker.evalute(self, datas)
+		self.checker.evaluate(self, datas)
 		return self.checker.getAccuracy()
 
 	def serialize(self):

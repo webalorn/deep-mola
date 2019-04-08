@@ -28,7 +28,7 @@ class DefaultMonitor:
 
 	def epochFinished(self, nnet, iEpoch, trainCost):
 		for name, datas in zip(self.testNames, self.testDatas):
-			nnet.checker.evalute(nnet, datas)
+			nnet.checker.evaluate(nnet, datas)
 			total, success, rate = nnet.checker.getAccuracyMetrics()
 
 			self.dataSetTested(name, total, success, rate)

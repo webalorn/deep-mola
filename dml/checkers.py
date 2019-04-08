@@ -4,6 +4,7 @@ import theano.tensor as T
 from theano.ifelse import ifelse
 from dml.tools.store import Serializable
 
+
 class BaseChecker(Serializable):
 	"""
 		A checker must check the accuracy of a function (like a classifier)
@@ -25,7 +26,7 @@ class OneClassChecker(BaseChecker):
 	def checkLayer(self, output, expected):
 		return np.isclose(np.argmax(output, 1), np.argmax(expected, 1)).astype(int)
 
-	def evalute(self, nnet, datas):
+	def evaluate(self, nnet, datas):
 		datas = nnet.reshapeDatas(datas)
 		runX, runY = datas
 		
@@ -42,7 +43,7 @@ class OneClassChecker(BaseChecker):
 
 	def getAccuracyMetrics(self):
 		""" Return the number of example, the number of good answers, and the success rate """
-		return (self.nbElements, self.nbRightElems, self.nbRightElems / self.nbElements)
+		return self.nbElements, self.nbRightElems, self.nbRightElems / self.nbElements
 
 	def getAccuracy(self):
 		""" Return the number of example, the number of good answers, and the success rate """

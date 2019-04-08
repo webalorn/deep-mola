@@ -80,7 +80,7 @@ class RMSprop(TrainAlgo):
 
 		return (
 			[
-				(p, p - self.learningRate * g / T.maximum(self.epsilon, T.sqrt(s)))
+				(p, p - self.learningRate * g / (T.sqrt(s) + self.epsilon))
 				for p, g, s in zip(params, grads, decayedSd)
 			] + [ 
 				(s, ds) for s, ds in zip(self.rmsSd, decayedSd)
