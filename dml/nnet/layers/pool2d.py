@@ -6,14 +6,16 @@ from dml.nnet.layers.base import BaseLayer
 from dml.excepts import BuildError
 from theano.tensor.signal.pool import pool_2d
 
-class MaxPool(BaseLayer): # TODO: PoolLayer for any function
+class Pool2D(BaseLayer):
 
-	def __init__(self, downScale, stride=None, *args, **kwargs):
+	def __init__(self, downScale, stride=None, padding=(0, 0), mode='max', *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		if isinstance(downScale, int):
 			downScale = (downScale, downScale)
 		self.downScale = downScale
 		self.stride = stride
+		self.padding = (padding, padding) if isinstance(padding, int) else padding
+		self.mode = 'average_inc_pad' if mode == 'average' else mode # max | sum | average
 
 	def computeOutputShape(self):
 		hOutDim = self.inputShape[-2] // self.downScale[0]
@@ -25,7 +27,8 @@ class MaxPool(BaseLayer): # TODO: PoolLayer for any function
 			x,
 			ws=self.downScale,
 			ignore_border=True,
-			mode='max',
+			mode=self.mode,
+			pad=self.padding,
 		)
 
 	def serialize(self):
@@ -37,5 +40,4 @@ class MaxPool(BaseLayer): # TODO: PoolLayer for any function
 
 	@classmethod
 	def serialGetParams(cls, datas):
-		l = ['downScale', 'stride']
-		return {p:datas[p] for p in l}
+		return {p: tuple(datas[p]) for p in ['downScale', 'stride', 'padding']}

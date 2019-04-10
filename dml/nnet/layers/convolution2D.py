@@ -7,20 +7,19 @@ from dml.excepts import BuildError
 
 class Convolution2D(BaseLayer):
 
-	def __init__(self, filterShape, nbChannels, stride=1, padding=None,
-		noInChannels=False, noOutChannels=False, *args, **kwargs):
+	def __init__(self, filterShape, nbChannels, stride=1, padding=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.filterShape = filterShape
-		self.nbChannels = nbChannels
-		self.stride = stride # TODO
-		self.padding = padding # TODO: None | <int> | 'same', 'half', 'full', 'valid' (as in Theano doc)
-		self.noInChannels = noInChannels # TODO: automaticly detect
-		self.noOutChannels = noOutChannels
+		self.nbChannels = nbChannels # Number of output channels
+		self.stride = (stride, stride) if isinstance(stride, int) else stride # int or tuple
+		self.padding = padding # None or 'valid' | 'full' | 'half' or 'same' | <int> | <int tuple>
+		self.noOutChannels = (self.nbChannels == 1) # If there is only one output channel, remove channels dimension
 
 	def computeInputShape(self):
 		super().computeInputShape()
-		if self.noInChannels:
+		if len(self.inputShape) == 2: # There is no channels
 			self.inputShape = (1,) + self.inputShape
+
 		if len(self.inputShape) != 3:
 			raise BuildError("Convolution2D input shape must have 3 dimensions, with one for the channels")
 		self.inputChannels = self.inputShape[0]
@@ -32,8 +31,6 @@ class Convolution2D(BaseLayer):
 
 		if self.noOutChannels:
 			self.shape = self.shape[1:]
-			if self.nbChannels != 1:
-				raise BuildError("You must have only one channel to not have an output channel dimension")
 
 	def buildInput(self):
 		super().buildInput()
@@ -56,12 +53,21 @@ class Convolution2D(BaseLayer):
 		)
 		self.params = [self.weights, self.biases]
 
-	def buildOutput(self, x): # TODO: handwriten [?]
+	def buildOutput(self, x):
+		border_mode = self.padding
+		if border_mode == None:
+			border_mode = 'valid'
+		if border_mode == 'same':
+			border_mode = 'half'
+
 		output = T.nnet.conv2d(
 			input=x,
 			filters=self.weights,
 			filter_shape=self.filterMatrixShape,
 			input_shape=(None, ) + self.inputShape,
+			border_mode=border_mode,
+			subsample=self.stride,
+			filter_flip=False,
 		)
 		output += self.biases.dimshuffle('x', 0, 'x', 'x')
 		if self.noOutChannels:
@@ -75,16 +81,17 @@ class Convolution2D(BaseLayer):
 			'nbChannels': self.nbChannels,
 			'stride': self.stride,
 			'padding': self.padding,
-			'noInChannels': self.noInChannels,
 			'noOutChannels': self.noOutChannels,
 		}
 
 	@classmethod
 	def serialGetParams(cls, datas):
-		l = ['nbChannels', 'stride', 'padding', 'noInChannels', 'noOutChannels']
+		padding = datas['padding']
 		return {
-			**{p: datas[p] for p in l},
+			**{p: datas[p] for p in ['nbChannels', 'noOutChannels']},
 			**{
 				'filterShape': tuple(datas['filterShape']),
+				'stride': tuple(datas['stride']),
+				'padding': tuple(padding) if isinstance(padding, tuple) else padding,
 			}
 		}

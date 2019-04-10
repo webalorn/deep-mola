@@ -45,8 +45,8 @@ def main():
 		network = Sequential([
 			InputLayer((28, 28)),
 
-			Convolution2D((5, 5), 20, noInChannels=True),
-			MaxPool((2, 2)),
+			Convolution2D((5, 5), 20),
+			Pool2D((2, 2)),
 			Activation(reLU),
 
 			# Convolution2D((5, 5), 40),
@@ -60,7 +60,7 @@ def main():
 			# Activation(tanh),
 
 			Dense(100),
-			Dropout(0.5),
+			# Dropout(0.5),
 			Activation(tanh),
 
 			Dense(10),
