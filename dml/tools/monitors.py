@@ -7,17 +7,16 @@ class DefaultMonitor:
 		Provides test datas to the neural network, and get accuracy in return
 	"""
 
-	def __init__(self, testInfos = []):
+	def __init__(self, testInfos=[], autoSave=None):
 		"""
 			Test infos are given as a list of tuples: (name, dataTest)
+			AutoSave will save the network state to the given file a the end of each epoch
 		"""
 		self.testNames = [infos[0] for infos in testInfos]
 		self.testDatas = [infos[1] for infos in testInfos]
+		self.autoSave = autoSave
 
 	def startTraining(self, maxEpochs):
-		pass
-
-	def epochFinished(self, nnet, iEpoch):
 		pass
 
 	def trainingFinished(self):
@@ -27,6 +26,9 @@ class DefaultMonitor:
 		pass
 
 	def epochFinished(self, nnet, iEpoch, trainCost):
+		if self.autoSave:
+			nnet.saveTo(self.autoSave)
+
 		for name, datas in zip(self.testNames, self.testDatas):
 			nnet.checker.evaluate(nnet, datas)
 			total, success, rate = nnet.checker.getAccuracyMetrics()
@@ -46,7 +48,7 @@ class StdOutputMonitor(DefaultMonitor):
 		super().epochFinished(nnet, iEpoch, trainCost)
 
 	def dataSetTested(self, name, total, success, rate):
-		print("Dataset {} has success rate of {:.2f}% : {} sur {}".format(
+		print("Dataset {} has success rate of {:.2f}% : {} over {}".format(
 			name,
 			rate * 100,
 			success,

@@ -25,12 +25,12 @@ class Dropout(BaseLayer):
 	def buildOutput(self, x):
 		return x * (1 - self.dropRate)
 
-	@classmethod
-	def serialGetParams(cls, datas):
-		return {'dropRate': datas['dropRate']}
-
 	def serialize(self):
 		return {
 			**super().serialize(),
 			'dropRate': self.dropRate,
 		}
+
+	@classmethod
+	def serialGetParams(cls, datas):
+		return {'dropRate': datas['dropRate']}

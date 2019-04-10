@@ -68,6 +68,23 @@ class Convolution2D(BaseLayer):
 			return output[0]
 		return output
 
+	def serialize(self):
+		return {
+			**super().serialize(),
+			'filterShape': self.filterShape,
+			'nbChannels': self.nbChannels,
+			'stride': self.stride,
+			'padding': self.padding,
+			'noInChannels': self.noInChannels,
+			'noOutChannels': self.noOutChannels,
+		}
+
 	@classmethod
 	def serialGetParams(cls, datas):
-		pass # TODO
+		l = ['nbChannels', 'stride', 'padding', 'noInChannels', 'noOutChannels']
+		return {
+			**{p: datas[p] for p in l},
+			**{
+				'filterShape': tuple(datas['filterShape']),
+			}
+		}

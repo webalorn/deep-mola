@@ -219,9 +219,9 @@ class Network(Storable):
 			'multipleInputsMode': self.multipleInputsMode,
 			'multipleOutputsMode': self.multipleOutputsMode,
 			'layers': [l.serialize() for l in self.layers],
-			'inputLayers': [l._serialId for l in self.inputLayers],
 			'outputLayers': [l._serialId for l in self.outputLayers],
 			'checker': None if not self.checker else self.checker.serialize(),
+			'params': [p.get_value().tolist() for p in self.params]
 		}
 
 	def repopulate(self, datas):
@@ -229,8 +229,14 @@ class Network(Storable):
 		for l in self.layers:
 			l.repopulateFromNNet(self)
 
-		self.inputLayers = [self.layers[i] for i in datas['inputLayers']]
 		self.outputLayers = [self.layers[i] for i in datas['outputLayers']]
 		self.checker = recreateObject(datas['checker'])
 		self.multipleInputsMode = datas['multipleInputsMode']
 		self.multipleOutputsMode = datas['multipleOutputsMode']
+
+		self.build() # The network must then be built to charge datas
+		for iParam, param in enumerate(self.params):
+			param.set_value(np.array(
+				datas['params'][iParam],
+				dtype=theano.config.floatX,
+			), borrow=True)

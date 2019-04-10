@@ -28,6 +28,14 @@ class MaxPool(BaseLayer): # TODO: PoolLayer for any function
 			mode='max',
 		)
 
+	def serialize(self):
+		return {
+			**super().serialize(),
+			'downScale': self.downScale,
+			'stride': self.stride,
+		}
+
 	@classmethod
 	def serialGetParams(cls, datas):
-		pass # TODO
+		l = ['downScale', 'stride']
+		return {p:datas[p] for p in l}

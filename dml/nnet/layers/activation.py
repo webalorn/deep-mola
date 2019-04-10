@@ -19,13 +19,13 @@ class Activation(BaseLayer):
 
 	def buildOutput(self, x):
 		return self.activation(x)
-	
-	@classmethod
-	def serialGetParams(cls, datas):
-		return {'activation': recreateObject(datas['activation'])}
 
 	def serialize(self):
 		return {
 			**super().serialize(),
 			'activation': serializeFunc(self.activation),
 		}
+	
+	@classmethod
+	def serialGetParams(cls, datas):
+		return {'activation': recreateObject(datas['activation'])}

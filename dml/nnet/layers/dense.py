@@ -40,6 +40,12 @@ class Dense(BaseLayer):
 	def buildOutput(self, x):
 		return T.dot(x, self.weights) + self.biases
 
+	def serialize(self):
+		return {
+			**super().serialize(),
+			'outputSize': self.outputSize,
+		}
+
 	@classmethod
 	def serialGetParams(cls, datas):
 		return {'outputSize': datas['outputSize']}
