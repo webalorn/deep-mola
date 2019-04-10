@@ -17,10 +17,10 @@ class Dropout(BaseLayer):
 
 	def buildInternal(self):
 		randGen = MRG_RandomStreams(np.random.RandomState(0).randint(999999))
-		self.mask = randGen.binomial(n=1, p=1-self.dropRate, size=self.train_x.shape)
+		self.mask = randGen.binomial(n=1, p=1-self.dropRate, size=self.train_x.shape[1:])
 
 	def buildTrainOutput(self, x):
-		return x * T.cast(self.mask, theano.config.floatX) # / (1-self.dropRate)
+		return x * T.cast(self.mask, theano.config.floatX).dimshuffle('x', 0) # / (1-self.dropRate)
 
 	def buildOutput(self, x):
 		return x * (1 - self.dropRate)

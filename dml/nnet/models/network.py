@@ -125,6 +125,9 @@ class Network(Storable):
 			trainDatas shape (numpy arrays) : [<input>, <output>]
 			<input> / <output> shape: [ [<tensor>] * nbExamples ] * nbLayers
 		"""
+		if not self.built:
+			raise UsageError("Please build the network before training it")
+
 		print("Start building training function...")
 		if not self.built:
 			raise BuildError("Layer not already built")

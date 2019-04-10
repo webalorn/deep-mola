@@ -13,7 +13,7 @@ class RandomGenerator(Serializable):
 		if fct == acts.sigmoid:
 			return NormalGen()
 		elif fct in [acts.reLU, acts.weakReLU]:
-			return NormalGen(k=2)
+			return NormalGen()
 		elif fct == acts.tanh:
 			return NormalGen()
 		return None		
@@ -25,14 +25,16 @@ class NormalGen(RandomGenerator):
 		self.center = center
 
 	def create(self, shape, inSize=1):
+		rescale = inSize if abs(self.center) > 1e-6 else 1
 		return np.asarray(
 			np.random.normal(
 				loc = self.center,
 				scale = np.sqrt(self.k/inSize),
 				size = shape,
-			),
+			) / rescale,
 			dtype = theano.config.floatX,
 		)
+
 
 	@classmethod
 	def serialGetParams(cls, datas):
