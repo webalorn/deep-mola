@@ -7,7 +7,7 @@ from dml.excepts import BuildError
 
 class Convolution2D(BaseLayer):
 
-	def __init__(self, filterShape, nbChannels, stride=1, padding=None, *args, **kwargs):
+	def __init__(self, filterShape=(5, 5), nbChannels=1, stride=1, padding=None, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.filterShape = filterShape
 		self.nbChannels = nbChannels # Number of output channels

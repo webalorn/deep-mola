@@ -9,7 +9,7 @@ class BaseChecker(Serializable):
 	"""
 		A checker must check the accuracy of a function (like a classifier)
 		The checker is "feed" via <evaluate> and might then be used to
-		compute some metrixs as accuracy, or evaluate other datas
+		compute some metrics such as accuracy, or evaluate other datas
 	"""
 
 	def __init__(self):

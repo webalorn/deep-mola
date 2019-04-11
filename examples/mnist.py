@@ -1,20 +1,6 @@
-from dml.nnet.models import Sequential
-from dml.nnet.layers import *
-from dml.math import *
-from dml.algos import *
-from dml.checkers import OneClassChecker
-from dml.tools.monitors import * 
-from pprint import pprint
-
 import numpy as np
 import theano
-
-theano.config.floatX = 'float32' # In network ??
-
-# theano.config.optimizer = 'None'
-# theano.config.scan.debug = True
-# theano.config.mode = 'DebugMode'
-# theano.config.exception_verbosity = 'high'
+from dml import *
 
 def readDatasFrom(filename):
 	with open(filename, 'r') as infile:
@@ -35,6 +21,7 @@ def readDatasFrom(filename):
 	return [np.array(x), np.array(y)]
 
 def main():
+	# dml.debugOn()
 	fromFile = False
 	quickTest = False
 
@@ -45,23 +32,21 @@ def main():
 		network = Sequential([
 			InputLayer((28, 28)),
 
-			Convolution2D((5, 5), 20),
-			Pool2D((2, 2)),
-			Activation(reLU),
+			# Convolution2D((5, 5), 20),
+			# Pool2D((2, 2)),
+			# Activation(reLU),
 
 			# Convolution2D((5, 5), 40),
 			# MaxPool((2, 2)),
-			# Activation(tanh),
-
-			Flatten(),
+			# Activation(reLU),
 
 			# Dense(1000),
 			# Dropout(0.5),
-			# Activation(tanh),
+			# Activation(reLU),
 
 			Dense(100),
 			# Dropout(0.5),
-			Activation(tanh),
+			Activation(),
 
 			Dense(10),
 			Activation(softmax),
@@ -72,9 +57,7 @@ def main():
 		network.build()
 
 		print("=> Network built !")
-
 		print("Read datas...")
-
 
 		if not quickTest:
 			trainingDatas = readDatasFrom("datas/mnist/training.in")

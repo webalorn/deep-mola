@@ -115,9 +115,9 @@ class Network(Storable):
 				for i, j in enumerate(order):
 					newEntries[io][l][i] = oldEntries[io][l][j]
 
-	def train(self, orderedTrainDatas, nbEpochs, batchSize=1,
+	def train(self, orderedTrainDatas, nbEpochs=1, batchSize=1,
 			loss=l2cost,
-			algo=GradientAlgo(1),
+			algo=GradientAlgo(0.5),
 			regul=0, monitors=[]):
 		"""
 			Train network using a given algorithm

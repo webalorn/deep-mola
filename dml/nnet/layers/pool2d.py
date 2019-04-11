@@ -8,7 +8,7 @@ from theano.tensor.signal.pool import pool_2d
 
 class Pool2D(BaseLayer):
 
-	def __init__(self, downScale, stride=None, padding=(0, 0), mode='max', *args, **kwargs):
+	def __init__(self, downScale=2, stride=None, padding=(0, 0), mode='max', *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		if isinstance(downScale, int):
 			downScale = (downScale, downScale)

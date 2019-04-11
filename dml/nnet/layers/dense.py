@@ -2,6 +2,9 @@ import numpy as np
 import theano
 import theano.tensor as T
 
+from operator import mul
+from functools import reduce
+
 from dml.nnet.layers.base import BaseLayer
 from dml.types import isVectorShape
 from dml.excepts import BuildError
@@ -20,12 +23,11 @@ class Dense(BaseLayer):
 
 	def computeInputShape(self):
 		super().computeInputShape()
-		if not isVectorShape(self.inputShape):
-			raise BuildError("DenseLayer input must be a vector")
+		self.inputSize = reduce(mul, self.inputShape, 1)
 
 	def buildInternal(self):
 		self.weights = theano.shared(
-			self.randomGen.create(shape=(self.inputShape[0], self.shape[0]), inSize=self.inputShape[0]),
+			self.randomGen.create(shape=(self.inputSize, self.shape[0]), inSize=self.inputSize),
 			borrow=True,
 			name="dense weights",
 		)
@@ -38,6 +40,8 @@ class Dense(BaseLayer):
 		self.regularized = [self.weights]
 
 	def buildOutput(self, x):
+		if not isVectorShape(self.inputShape):
+			x = T.reshape(x, (x.shape[0], self.inputSize))
 		return T.dot(x, self.weights) + self.biases
 
 	def serialize(self):

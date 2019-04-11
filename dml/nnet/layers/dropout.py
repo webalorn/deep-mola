@@ -11,7 +11,7 @@ class Dropout(BaseLayer):
 		The Dropout randomly remove a choosen number of it's inputs
 	"""
 
-	def __init__(self, dropRate, *args, **kwargs):
+	def __init__(self, dropRate=0.5, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.dropRate = dropRate
 

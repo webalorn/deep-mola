@@ -2,6 +2,7 @@ from dml.nnet.layers.base import BaseLayer
 from dml.math.random import RandomGenerator
 from dml.tools.store import serializeFunc
 from dml.tools.store import recreateObject
+from dml.math.activations import reLU
 
 
 class Activation(BaseLayer):
@@ -11,7 +12,7 @@ class Activation(BaseLayer):
 
 	_serialParams = ['activation']
 
-	def __init__(self, activation, *args, **kwargs):
+	def __init__(self, activation=reLU, *args, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.activation = activation
 		if self.randomGen == None:

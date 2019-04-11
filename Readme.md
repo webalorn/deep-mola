@@ -1,6 +1,6 @@
 # DeepMola Neural Network [DML]
 
-This library is built on top of theano, without using high-level functionalities such as functions already built for neural networks.
+This library is built on top of theano.
 
 ## Requires:
 
