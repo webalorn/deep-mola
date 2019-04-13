@@ -8,6 +8,7 @@ DML use theano and scipy, and run with python 3
 
 - `python3`
 - `numpy`
+- `skimage`
 - `theano` (do not forget theano dependencies)
 - `matplotlib` for plotting network training accuracy
 
