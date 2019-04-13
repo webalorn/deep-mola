@@ -25,8 +25,15 @@ class Convolution2D(BaseLayer):
 		self.inputChannels = self.inputShape[0]
 
 	def computeOutputShape(self):
-		hOutDim = self.inputShape[1] - self.filterShape[0] + 1
-		wOutDim = self.inputShape[2] - self.filterShape[1] + 1
+		if self.padding in [None, 'valid']:
+			hOutDim = self.inputShape[1] - self.filterShape[0] + 1
+			wOutDim = self.inputShape[2] - self.filterShape[1] + 1
+		elif self.padding in ['half', 'same']:
+			hOutDim = self.inputShape[1]
+			wOutDim = self.inputShape[2]
+		else:
+			raise BuildError("Padding {} not implemented".format(str(self.padding)))
+
 		self.shape = (self.nbChannels, hOutDim, wOutDim)
 
 		if self.noOutChannels:

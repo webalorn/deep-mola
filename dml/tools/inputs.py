@@ -33,7 +33,7 @@ def readImagesFrom(directory, label, keepImage=None, preprocess=None, rescale=1/
 				allArgs[i] = [arg] * len(directory)
 
 		for args in zip(*allArgs):
-			newIn, newOut = readImagesFrom(*args)
+			newIn, newOut = readImagesFrom2(*args)
 
 	if isinstance(keepImage, str):
 		ext = keepImage
@@ -45,18 +45,19 @@ def readImagesFrom(directory, label, keepImage=None, preprocess=None, rescale=1/
 			and (not keepImage or keepImage(f))
 	]
 
-	images = [
-		np.asarray(
+	def readImage(img):
+		img = np.asarray(
 			skimage.io.imread(join(directory, img)),
 			dtype=theano.config.floatX
 		) * rescale
-		for img in imgNames
-	]
 
-	if callable(preprocess):
-		images = [preprocess(img) for img in images]
-	elif isinstance(preprocess, BaseProcessor):
-		images = [preprocess.process(img) for img in images]
+		if callable(preprocess):
+			img = preprocess(img)
+		elif isinstance(preprocess, BaseProcessor):
+			img = preprocess.process(img)
+		return img
+
+	images = [readImage(img) for img in imgNames]
 
 	for img in images:
 		if img.shape != images[0].shape:
