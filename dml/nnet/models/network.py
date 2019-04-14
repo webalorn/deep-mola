@@ -19,12 +19,13 @@ class Network(Storable):
 		Represents a neural network with it's inputs, outputs and layers
 	"""
 
-	def __init__(self, layers=[], outputs=[]):
+	def __init__(self, layers=[], outputs=[], maxBatch=None):
 		self.layers = []
 		self.inputLayers = []
 		self.outputLayers = []
 		self.built = False
 		self.checker = None
+		self.maxBatch = maxBatch
 
 		self.params = []  # Learnable parameters
 		self.regularized = [] # Parameters that can be regularized
@@ -174,11 +175,20 @@ class Network(Storable):
 		for m in monitors:
 			m.trainingFinished()
 
-	def runBatch(self, inputDatas, forceMultMode = False):
+	def runBatch(self, inputDatas, forceMultMode = False, maxBatch=107):
 		if not self.multipleInputsMode and not forceMultMode:
-			inputDatas = np.array([inputDatas], dtype=theano.config.floatX)
+			inputDatas = [inputDatas]
+		maxBatch = maxBatch or self.maxBatch or inputDatas[0].shape[0]
+		nbLayers, batchSize = len(inputDatas), len(inputDatas[0])
 
-		output = self.runNnetBatch(*inputDatas)
+		outputLayers = [[] for iLayer in inputDatas]
+		for k in range(0, batchSize, maxBatch):
+			trainSet = [inputDatas[l][k : k + maxBatch] for l in range(nbLayers)]
+			result = self.runNnetBatch(*trainSet)
+			for l, r in zip(outputLayers, result):
+				l.append(r)
+
+		output = [np.concatenate(l) for l in outputLayers]
 
 		if not self.multipleOutputsMode and not forceMultMode:
 			return output[0]
