@@ -3,6 +3,7 @@ import numpy as np
 from os.path import isfile, join
 from dml.tools.preprocessors import BaseProcessor
 from dml.excepts import *
+from dml.tools.dataflow import ImageDataFlow
 
 def isolateChannels(image):
 	""" convert shape (h, w, channels) to (channels, h, w) """
@@ -23,51 +24,6 @@ def readImagesFrom(directory, label, keepImage=None, preprocess=None, rescale=1/
 
 		You can provide a list instead of the arguments to merge multiple sources
 	"""
-
-	if isinstance(directory, list):
-		ins, outs = [], []
-
-		allArgs = [directory, label, keepImage]
-		for i, arg in enumerate(allArgs):
-			if not isinstance(arg, list):
-				allArgs[i] = [arg] * len(directory)
-
-		for args in zip(*allArgs):
-			newIn, newOut = readImagesFrom2(*args)
-
-	if isinstance(keepImage, str):
-		ext = keepImage
-		keepImage = lambda x : x[-len(ext):] == ext
-
-	imgNames = [
-		f for f in os.listdir(directory)
-		if isfile(join(directory, f)) 
-			and (not keepImage or keepImage(f))
-	]
-
-	def readImage(img):
-		img = np.asarray(
-			skimage.io.imread(join(directory, img)),
-			dtype=theano.config.floatX
-		) * rescale
-
-		if callable(preprocess):
-			img = preprocess(img)
-		elif isinstance(preprocess, BaseProcessor):
-			img = preprocess.process(img)
-		return img
-
-	images = [readImage(img) for img in imgNames]
-
-	for img in images:
-		if img.shape != images[0].shape:
-			raise ShapeError("All images must have the same size")
-
-	labels = [label(img) for img in imgNames] if callable(label) else [label] * len(imgNames)
-
-	images = [isolateChannels(img) for img in images]
-
-	return [
-		np.asarray(images, dtype=theano.config.floatX),
-		np.asarray(labels, dtype=theano.config.floatX),
-	]
+	datas = ImageDataFlow(preprocess, rescale)
+	datas.addSource(directory, label, keepImage)
+	return datas.getAll()

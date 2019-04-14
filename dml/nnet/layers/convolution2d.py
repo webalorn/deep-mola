@@ -99,6 +99,6 @@ class Convolution2D(BaseLayer):
 			**{
 				'filterShape': tuple(datas['filterShape']),
 				'stride': tuple(datas['stride']),
-				'padding': tuple(padding) if isinstance(padding, tuple) else padding,
+				'padding': tuple(padding) if isinstance(padding, list) else padding,
 			}
 		}

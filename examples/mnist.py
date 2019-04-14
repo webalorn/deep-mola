@@ -1,5 +1,5 @@
 import numpy as np
-import theano
+import theano, dml
 from dml import *
 
 def readDatasFrom(filename):
@@ -23,7 +23,7 @@ def readDatasFrom(filename):
 def main():
 	# dml.debugOn()
 	fromFile = False
-	quickTest = False
+	quickTest = True
 
 	if fromFile:
 		print("Load network from file")

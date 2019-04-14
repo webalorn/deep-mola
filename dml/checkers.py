@@ -30,7 +30,7 @@ class OneClassChecker(BaseChecker):
 		datas = nnet.reshapeDatas(datas)
 		runX, runY = datas
 		
-		answers = nnet.runBatch(runX, forceMultMode = True)
+		answers = nnet.runBatch(runX)
 		
 		goodAnswers = np.array(
 			[self.checkLayer(y, y2) for y, y2 in zip(answers, runY)],

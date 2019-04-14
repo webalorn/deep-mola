@@ -19,16 +19,12 @@ class TrainAlgo():
 		grads = T.grad(cost, params)
 		updates = self.getUpdates(params, grads)
 
-		self.iBatch = T.lscalar()
-		batchBegin, batchEnd = self.iBatch * batchSize, (self.iBatch + 1) * batchSize
-
 		gradientTrain = theano.function(
-			[self.iBatch],
-			cost,
+			[], cost,
 			updates = updates,
 			givens = {
-				**{ x : trainX[iLayer][batchBegin : batchEnd] for iLayer, x in enumerate(inputTensors) },
-				**{ y : trainY[iLayer][batchBegin : batchEnd] for iLayer, y in enumerate(expectY) },
+				**{ x : trainX[iLayer] for iLayer, x in enumerate(inputTensors) },
+				**{ y : trainY[iLayer] for iLayer, y in enumerate(expectY) },
 			},
 		)
 		return gradientTrain
