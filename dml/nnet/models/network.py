@@ -20,7 +20,7 @@ class Network(Storable):
 		Represents a neural network with it's inputs, outputs and layers
 	"""
 
-	def __init__(self, layers=[], outputs=[], maxBatch=None):
+	def __init__(self, layers=[], outputs=[], maxBatch=100):
 		self.layers = []
 		self.inputLayers = []
 		self.outputLayers = []
@@ -138,7 +138,12 @@ class Network(Storable):
 				regul = L2regul(regul)
 			self.cost += regul.cost(self.regularized) / batchSize
 
-		self.trainAlgo = algo.trainFct(self.cost, self.inputTensors, expectY, [self.trainX, self.trainY], batchSize, self.params)
+		netUpdates = []
+		for l in self.layers:
+			for lUpdate in l.updates:
+				netUpdates.append(lUpdate)
+
+		self.trainAlgo = algo.trainFct(self.cost, self.inputTensors, expectY, [self.trainX, self.trainY], batchSize, self.params, netUpdates)
 
 	def train(self, trainDatas, nbEpochs=1, batchSize=1,
 			loss=l2cost,

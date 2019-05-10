@@ -14,9 +14,10 @@ class Dense(BaseLayer):
 		The Dense layer is a fully-connected layer
 	"""
 
-	def __init__(self, outputSize, *args, **kwargs):
+	def __init__(self, outputSize, *args, noBias=False, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.outputSize = outputSize
+		self.noBias = noBias
 
 	def computeOutputShape(self):
 		self.shape = (self.outputSize, )
@@ -36,20 +37,24 @@ class Dense(BaseLayer):
 			borrow=True,
 			name="dense biases",
 		)
-		self.params = [self.weights, self.biases]
+		self.params = [self.weights] if self.noBias else [self.weights, self.biases]
 		self.regularized = [self.weights]
 
 	def buildOutput(self, x):
 		if not isVectorShape(self.inputShape):
 			x = T.reshape(x, (x.shape[0], self.inputSize))
-		return T.dot(x, self.weights) + self.biases
+		out = T.dot(x, self.weights)
+		if not self.noBias:
+			out += self.biases
+		return out
 
 	def serialize(self):
 		return {
 			**super().serialize(),
 			'outputSize': self.outputSize,
+			'noBias': self.noBias,
 		}
 
 	@classmethod
 	def serialGetParams(cls, datas):
-		return {'outputSize': datas['outputSize']}
+		return {'outputSize': datas['outputSize'], 'noBias': datas['noBias']}

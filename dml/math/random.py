@@ -16,7 +16,11 @@ class RandomGenerator(Serializable):
 			return NormalGen()
 		elif fct == acts.tanh:
 			return NormalGen()
-		return None		
+		return None	
+
+	@staticmethod
+	def constFloat(val):
+		return np.array([val], dtype=theano.config.floatX)[0]	
 
 
 class NormalGen(RandomGenerator):

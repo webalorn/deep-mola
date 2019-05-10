@@ -23,6 +23,7 @@ class BaseLayer(Serializable):
 		
 		self.params = [] # Learnable parameters, must be theano shared variables
 		self.regularized = []
+		self.updates = []
 
 		self.addInput(inputs)
 
