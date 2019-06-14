@@ -10,10 +10,10 @@ class Sequential(Network):
 
 	def build(self, *args, **kwargs):
 		if not self.outputLayers:
-			self.outputLayers = [self.layers[-1]]
+			self.addOutput(self.layers[-1])
 
 		for l1, l2 in zip(self.layers, self.layers[1:]):
 			if not l2.inputs and l2.nbInputs:
-				l2.inputs = [l1]
+				l2.addInput(l1)
 
 		super().build(*args, **kwargs)

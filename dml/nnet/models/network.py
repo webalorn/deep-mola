@@ -64,6 +64,7 @@ class Network(Storable):
 		self.checker = checker
 
 	def _computeNdim(self, datas):
+		""" Get the number of dimensions of nested list / numpy arrays """
 		if isinstance(datas, list):
 			return self._computeNdim(datas[0]) + 1
 		elif type(datas).__module__ == np.__name__:
@@ -73,14 +74,14 @@ class Network(Storable):
 
 	def reshapeIODatas(self, datas, isInput=True, withBatch=True):
 		addDims = (1 if withBatch else 0) + 1
-		models = self.inputLayers if isInput else self.outputLayers
+		models = self.inputLayers if isInput else self.outputLayers # Tensor representing input
 
 		if self._computeNdim(datas) != addDims + len(models[0].shape): # No layer dim
 			datas = [datas]
 		return [np.array(d, dtype=theano.config.floatX) for d in datas]
 
 	def reshapeDatas(self, datas, withBatch=True):
-		return [self.reshapeIODatas(d, isIn, withBatch) for d, isIn in zip(datas, [True, False])]
+		return [self.reshapeIODatas(d, isInput, withBatch) for d, isInput in zip(datas, [True, False])]
 
 	def build(self):
 		"""
@@ -136,7 +137,8 @@ class Network(Storable):
 		self.trainY = [theano.shared(lY, name="trainY", borrow=True) for lY in datasY]
 
 		expectY = [newBatchTensor(l.shape) for l in self.outputLayers]
-		self.cost = sum([self.outLoss[iLayer](yOut, expectY[iLayer]) for iLayer, yOut in enumerate(self.trainOuts) ])
+
+		self.cost = sum([self.outLoss[iLayer](yOut, expectY[iLayer]) for iLayer, yOut in enumerate(self.trainOuts)])
 
 		if regul:
 			if not isinstance(regul, Regulator): # Default regularization is L2
@@ -236,8 +238,7 @@ class Network(Storable):
 		if self.checker == None:
 			raise UsageError("No checker found")
 
-		self.checker.evaluate(self, datas)
-		return self.checker.getAccuracy()
+		return self.checker.evaluate(self, datas).accuracy()
 
 	def serialize(self):
 		for i, l in enumerate(self.layers):

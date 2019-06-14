@@ -44,6 +44,8 @@ class ImageDataFlow(BaseDataFlow):
 	@staticmethod
 	def isolateChannels(image):
 		""" convert shape (h, w, channels) to (channels, h, w) """
+		if image.ndim < 3:
+			return image # If grayscale
 		nbChan = len(image[0][0])
 		return np.asarray([
 			image[:,:,chan] for chan in range(nbChan)

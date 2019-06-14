@@ -1,4 +1,4 @@
-from skimage import transform, util
+from skimage import transform, util, color
 
 class BaseProcessor:
 	def process(self, inData):
@@ -24,5 +24,7 @@ class ImagePreprocess(BaseProcessor):
 				image = util.pad(image, ((padH, padH), (padW, padW), (0, 0)), 'constant')
 
 			image = transform.resize(image, self.newShape, mode='symmetric', preserve_range=True)
+			if self.grayscale:
+				image = color.rgb2gray(image)
 
 		return image

@@ -30,8 +30,8 @@ class DefaultMonitor:
 			nnet.saveTo(self.autoSave)
 
 		for name, datas in zip(self.testNames, self.testDatas):
-			nnet.checker.evaluate(nnet, datas)
-			total, success, rate = nnet.checker.getAccuracyMetrics()
+			metrics = nnet.checker.evaluate(nnet, datas)
+			total, success, rate = metrics.nbElems, metrics.nbRightElems, metrics.accuracy()
 
 			self.dataSetTested(name, total, success, rate)
 

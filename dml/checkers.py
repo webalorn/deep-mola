@@ -4,6 +4,45 @@ import theano.tensor as T
 from theano.ifelse import ifelse
 from dml.tools.store import Serializable
 
+class Metrics():
+	pass
+
+class OneClassMetrics():
+	def __init__(self, nbClasses=2):
+		self.nbClasses = nbClasses
+		self.nbRightElems = 0
+		self.nbElems = 0
+
+		self.nbElInClass = [0] * nbClasses
+		self.nbRightInClass = [0] * nbClasses
+		self.nbMisclassIn = [0] * nbClasses
+
+		self.answers = []
+
+	def addResult(self, goodClass, answerClass):
+		self.nbElems += 1
+		self.nbElInClass[goodClass] += 1
+
+		if goodClass == answerClass:
+			self.nbRightInClass[goodClass] += 1
+			self.nbRightElems += 1
+		else:
+			self.nbMisclassIn[answerClass] += 1
+
+	def setResult(self, expectedClasses, answerClasses):
+		self.answers = [(a, b) for a, b in zip(expectedClasses, answerClasses)]
+
+		for goodC, ansC in self.answers:
+			self.addResult(goodC, ansC)
+
+	def accuracy(self):
+		return self.nbRightElems / self.nbElems
+
+	def getClassGrid(self):
+		grid = [[0]*self.nbClasses for _ in range(self.nbClasses)]
+		for goodC, ansC in self.answers:
+			grid[ansC][goodC] += 1 # False positive for ansC with data from goodC
+		return grid
 
 class BaseChecker(Serializable):
 	"""
@@ -23,28 +62,27 @@ class OneClassChecker(BaseChecker):
 	"""
 		Checker for classifiers that must output exaclty one class per output layer
 	"""
-	def checkLayer(self, output, expected):
-		return np.isclose(np.argmax(output, 1), np.argmax(expected, 1)).astype(int)
 
 	def evaluate(self, nnet, datas):
+		if len(nnet.outputLayers) != 1 or len(nnet.outputLayers[0].shape) != 1:
+			raise Exception("Checker for class accross multiple layers or multiple dimensions not yet implemented")
+		
 		datas = nnet.reshapeDatas(datas)
 		runX, runY = datas
-		
+
 		answers = nnet.runBatch(runX)
-		
-		goodAnswers = np.array(
-			[self.checkLayer(y, y2) for y, y2 in zip(answers, runY)],
-			dtype=theano.config.floatX
-		)
-		self.elementAccuracy = np.mean(goodAnswers, 0)
-		self.elementIsRight = np.isclose(self.elementAccuracy, 1)
-		self.nbElements = len(self.elementIsRight)
-		self.nbRightElems = np.count_nonzero(self.elementIsRight)
 
-	def getAccuracyMetrics(self):
-		""" Return the number of example, the number of good answers, and the success rate """
-		return self.nbElements, self.nbRightElems, self.nbRightElems / self.nbElements
+		# Take the first layer
+		output = answers[0]
+		expected = runY[0]
 
-	def getAccuracy(self):
-		""" Return the number of example, the number of good answers, and the success rate """
-		return self.nbRightElems / self.nbElements
+		nbClasses = nnet.outputLayers[0].shape[0]
+		metrics = OneClassMetrics(nbClasses)
+
+		answerClasses = np.argmax(output, 1)
+		expectedClasses = np.argmax(expected, 1)
+
+		metrics.setResult(expectedClasses, answerClasses)
+
+		return metrics
+
