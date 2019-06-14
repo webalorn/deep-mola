@@ -7,3 +7,6 @@ from dml.nnet.layers.input import *
 from dml.nnet.layers.convolution2d import *
 from dml.nnet.layers.pool2d import *
 from dml.nnet.layers.batchnorm import *
+from dml.nnet.layers.merge import *
+
+from dml.nnet.layers.presets import *

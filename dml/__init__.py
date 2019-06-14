@@ -14,3 +14,4 @@ def debugOn():
 	theano.config.scan.debug = True
 	theano.config.mode = 'DebugMode'
 	theano.config.exception_verbosity = 'high'
+	theano.config.on_unused_input = 'warn'

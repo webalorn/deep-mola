@@ -5,6 +5,7 @@ import theano.tensor as T
 from dml.excepts import BuildError
 from dml.math.random import NormalGen
 from dml.tools.store import Serializable, recreateObject
+from dml.nnet.layers.presets.group import *
 
 class BaseLayer(Serializable):
 	"""
@@ -15,6 +16,8 @@ class BaseLayer(Serializable):
 	nbInputs = 1 # None stand for an undefined number of inputs
 
 	def __init__(self, inputs=[], randomGen = None):
+		self.network = None
+
 		self.built = False
 		self.inputs = []
 		self.inputShape = tuple()
@@ -27,12 +30,31 @@ class BaseLayer(Serializable):
 
 		self.addInput(inputs)
 
+	"""
+		Creating network structure
+	"""
+
 	def addInput(self, layer):
 		if isinstance(layer, list):
 			for l in layer:
 				self.addInput(l)
+		elif isinstance(layer, PresetGroup):
+			self.add(layer.outLayers)
 		else:
 			self.inputs.append(layer)
+		return layer
+
+	def withInput(self, layer):
+		self.addInput(layer)
+		return self
+
+	def asOutput(self, loss=None):
+		self.network.addOutput(self, loss)
+		return self
+
+	"""
+		Building network
+	"""
 
 	def computeInputShape(self):
 		if self.nbInputs == 1:
@@ -54,7 +76,8 @@ class BaseLayer(Serializable):
 			self.x = self.previous.y
 			self.train_x = self.previous.train_y
 		else:
-			raise BuildError("Can't build X with multiple inputs")
+			self.x = [l.y for l in self.inputs]
+			self.train_x = [l.train_y for l in self.inputs]
 
 	def buildInternal(self):
 		"""
@@ -74,7 +97,7 @@ class BaseLayer(Serializable):
 		"""
 		return self.buildOutput(x)
 
-	def build(self, network):
+	def build(self):
 		if self.nbInputs != None and self.nbInputs != len(self.inputs):
 			raise BuildError("Invalid number of input layers")
 
@@ -85,8 +108,6 @@ class BaseLayer(Serializable):
 		if self.randomGen == None:
 			self.randomGen = NormalGen()
 
-		self.network = network
-
 		self.computeInputShape()
 		self.computeOutputShape()
 
@@ -96,6 +117,10 @@ class BaseLayer(Serializable):
 		self.train_y = self.buildTrainOutput(self.train_x)
 
 		self.built = True
+
+	"""
+		Serialize datas
+	"""
 
 	def serialize(self):
 		return {

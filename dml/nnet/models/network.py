@@ -1,7 +1,6 @@
 import numpy as np
 import theano
 import theano.tensor as T
-from copy import deepcopy
 
 from dml.nnet.layers.base import BaseLayer
 from dml.excepts import *
@@ -13,6 +12,7 @@ from dml.checkers import BaseChecker
 from dml.math.regularization import Regulator, L2regul
 from dml.tools.store import Storable, recreateObject
 from dml.tools.dataflow import BaseDataFlow, DirectDataFlow
+from dml.nnet.layers.presets.group import *
 
 
 class Network(Storable):
@@ -20,13 +20,15 @@ class Network(Storable):
 		Represents a neural network with it's inputs, outputs and layers
 	"""
 
-	def __init__(self, layers=[], outputs=[], maxBatch=100):
+	def __init__(self, layers=[], outputs=[], maxBatch=100, defaultLoss=l2cost):
 		self.layers = []
 		self.inputLayers = []
 		self.outputLayers = []
+		self.outLoss = []
 		self.built = False
 		self.checker = None
 		self.maxBatch = maxBatch
+		self.defaultLoss = defaultLoss
 
 		self.params = []  # Learnable parameters
 		self.regularized = [] # Parameters that can be regularized
@@ -38,16 +40,22 @@ class Network(Storable):
 		if isinstance(layer, list):
 			for l in layer:
 				self.add(l)
+		elif isinstance(layer, PresetGroup):
+			self.add(layer.layers)
 		else:
 			self.layers.append(layer)
+			layer.network = self
 		return layer
 
-	def addOutput(self, layer):
+	def addOutput(self, layer, loss=None):
 		if isinstance(layer, list):
 			for l in layer:
-				self.addOutput(l)
+				self.addOutput(l, loss)
+		elif isinstance(layer, PresetGroup):
+			self.add(layer.endLayers)
 		else:
 			self.outputLayers.append(layer)
+			self.outLoss.append(loss or self.defaultLoss)
 		return layer
 
 	def setChecker(self, checker):
@@ -91,7 +99,7 @@ class Network(Storable):
 		# Build layers
 		for l in self.layers:
 			print("- Build layer...", type(l))
-			l.build(self)
+			l.build()
 			if isinstance(l, InputLayer):
 				self.inputLayers.append(l)
 
@@ -113,7 +121,7 @@ class Network(Storable):
 
 		self.built = True
 
-	def _buildTrainFct(self, batchSize, loss, algo, regul):
+	def _buildTrainFct(self, batchSize, algo, regul):
 		if not self.built:
 			raise UsageError("Please build the network before training it")
 
@@ -127,11 +135,8 @@ class Network(Storable):
 		self.trainX = [theano.shared(lX, name="trainX", borrow=True) for lX in datasX] # To allow theano functions to access traning datas
 		self.trainY = [theano.shared(lY, name="trainY", borrow=True) for lY in datasY]
 
-		if not isinstance(loss, list):
-			loss = [loss] * len(self.outs)
-
 		expectY = [newBatchTensor(l.shape) for l in self.outputLayers]
-		self.cost = sum([loss[iLayer](yOut, expectY[iLayer]) for iLayer, yOut in enumerate(self.trainOuts) ])
+		self.cost = sum([self.outLoss[iLayer](yOut, expectY[iLayer]) for iLayer, yOut in enumerate(self.trainOuts) ])
 
 		if regul:
 			if not isinstance(regul, Regulator): # Default regularization is L2
@@ -146,7 +151,6 @@ class Network(Storable):
 		self.trainAlgo = algo.trainFct(self.cost, self.inputTensors, expectY, [self.trainX, self.trainY], batchSize, self.params, netUpdates)
 
 	def train(self, trainDatas, nbEpochs=1, batchSize=1,
-			loss=l2cost,
 			algo=GradientAlgo(0.5),
 			regul=0, monitors=[]):
 		"""
@@ -155,7 +159,7 @@ class Network(Storable):
 			trainDatas shape (numpy arrays) : [<input>, <output>]
 			<input> / <output> shape: [ [<tensor>] * nbExamples ] * nbLayers
 		"""
-		self._buildTrainFct(batchSize, loss, algo, regul)
+		self._buildTrainFct(batchSize, algo, regul)
 		if not isinstance(monitors, list):
 			monitors = [monitors]
 
@@ -179,6 +183,8 @@ class Network(Storable):
 				newDatas = trainDatas.getDatas(ids)
 
 				for trainDim, dimDatas in zip([self.trainX, self.trainY], newDatas):
+					if len(trainDim) != len(dimDatas):
+						raise UsageError("There must be as many input / output layers as input / output datas")
 					for tensor, val in zip(trainDim, dimDatas):
 						tensor.set_value(val, borrow=True)
 
@@ -195,7 +201,7 @@ class Network(Storable):
 		maxBatch = maxBatch or self.maxBatch or inputDatas[0].shape[0]
 		nbLayers, batchSize = len(inputDatas), len(inputDatas[0])
 
-		outputLayers = [[] for iLayer in inputDatas]
+		outputLayers = [[] for iLayer in self.outputLayers]
 		for k in range(0, batchSize, maxBatch):
 			trainSet = [inputDatas[l][k : k + maxBatch] for l in range(nbLayers)]
 			result = self.runNnetBatch(*trainSet)
