@@ -9,7 +9,10 @@ def reLU(x):
 	return T.maximum(0.0, x)
 
 def weakReLU(x):
-	return T.maximum(0.001 * x, x)
+	return T.maximum(0.0001 * x, x)
+
+def weakReLU01(x):
+	return T.maximum(0.1*x, x)
 
 def tanh(x):
 	return T.tanh(x)

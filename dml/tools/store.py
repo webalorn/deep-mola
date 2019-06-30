@@ -1,5 +1,6 @@
 from importlib import import_module
-import json
+import os, json
+import theano as T
 
 # Serializable objects
 
@@ -12,16 +13,13 @@ class Serializable:
 
 	@classmethod
 	def recreate(cls, datas):
-		args = cls.serialGetParams(datas)
-		obj = cls(**args)
+		obj = cls.reacretObj(datas)
 		obj.repopulate(datas)
 		return obj
 
 	@classmethod
-	def serialGetParams(cls, datas):
-		""" This function must take the serialized object and
-		return the parameters taken by the class constructor. """
-		return {}
+	def reacretObj(cls, datas):
+		return cls()
 
 	def repopulate(self, datas):
 		pass
@@ -31,6 +29,7 @@ class Storable(Serializable):
 	def saveTo(self, file):
 		""" file can be a string or a file object """
 		if isinstance(file, str):
+			os.makedirs(os.path.dirname(file), exist_ok=True)
 			file = open(file, 'w')
 
 		json.dump(self.serialize(), file)

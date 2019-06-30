@@ -20,6 +20,12 @@ class InputLayer(BaseLayer):
 	def buildOutput(self, x):
 		return self.inputTensor
 
+	def serialize(self):
+		return {
+			**super().serialize(),
+			'shape': self.shape,
+		}
+
 	@classmethod
-	def serialGetParams(cls, datas):
-		return {'shape': tuple(datas['shape'])}
+	def reacretObj(cls, datas):
+		return cls(tuple(datas['shape']))

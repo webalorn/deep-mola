@@ -91,14 +91,12 @@ class Convolution2D(BaseLayer):
 			'noOutChannels': self.noOutChannels,
 		}
 
-	@classmethod
-	def serialGetParams(cls, datas):
+	def repopulate(self, datas):
+		super().repopulate(datas)
+		self.filterShape = tuple(datas['filterShape'])
+		self.nbChannels = datas['nbChannels']
+		self.noOutChannels = datas['noOutChannels']
+		self.stride = tuple(datas['stide'])
+
 		padding = datas['padding']
-		return {
-			**{p: datas[p] for p in ['nbChannels', 'noOutChannels']},
-			**{
-				'filterShape': tuple(datas['filterShape']),
-				'stride': tuple(datas['stride']),
-				'padding': tuple(padding) if isinstance(padding, list) else padding,
-			}
-		}
+		self.padding = tuple(padding) if isinstance(padding, list) else padding

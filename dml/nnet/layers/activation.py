@@ -10,13 +10,17 @@ class Activation(BaseLayer):
 		The Activation layer apply a function on each of the inputs
 	"""
 
-	_serialParams = ['activation']
-
 	def __init__(self, activation=reLU, *args, **kwargs):
 		super().__init__(*args, **kwargs)
+		self.setActivation(activation)
+
+	def setActivation(self, activation=reLU):
 		self.activation = activation
 		if self.randomGen == None:
 			self.randomGen = RandomGenerator.getDefaultForActivation(self.activation)
+
+	def getDisplayLayerSpecificInfos(self):
+		return self.activation.__name__
 
 	def buildOutput(self, x):
 		return self.activation(x)
@@ -27,6 +31,6 @@ class Activation(BaseLayer):
 			'activation': serializeFunc(self.activation),
 		}
 	
-	@classmethod
-	def serialGetParams(cls, datas):
-		return {'activation': recreateObject(datas['activation'])}
+	def repopulate(self, datas):
+		super().repopulate(datas)
+		self.setActivation(recreateObject(datas['activation']))

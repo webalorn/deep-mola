@@ -2,6 +2,7 @@ import skimage, theano, os
 import numpy as np
 from os.path import isfile, join
 from dml.tools.preprocessors import BaseProcessor
+from dml.tools.datautils import *
 from dml.excepts import *
 
 class BaseDataFlow:
@@ -34,12 +35,14 @@ class DirectDataFlow(BaseDataFlow):
 		return self.datas
 
 class ImageDataFlow(BaseDataFlow):
-	def __init__(self, preprocess=None, rescale=1/256):
+	def __init__(self, preprocess=None, rescale=1/256, augment=None):
 		self.imagesNames = []
 		self.imagesPaths = []
 		self.imagesLabel = []
 		self.preprocess = preprocess
-		self.rescale = rescale
+		self.rescale = rescale # Rescale colors
+		self.augment = augment
+		self.nbAugmentFilters = 1 if augment == None else augment.nbFilters()
 
 	@staticmethod
 	def isolateChannels(image):
@@ -51,6 +54,12 @@ class ImageDataFlow(BaseDataFlow):
 			image[:,:,chan] for chan in range(nbChan)
 		], dtype=theano.config.floatX)
 
+	def addImageFromSource(self, fName, path, label):
+		for _ in range(self.nbAugmentFilters):
+			self.imagesNames.append(fName)
+			self.imagesPaths.append(path)
+			self.imagesLabel.append(label)
+
 	def addSource(self, directory, label, keepImage=None):
 		if isinstance(keepImage, str):
 			ext = keepImage
@@ -58,9 +67,7 @@ class ImageDataFlow(BaseDataFlow):
 
 		for f in os.listdir(directory):
 			if isfile(join(directory, f)) and (not keepImage or keepImage(f)):
-				self.imagesNames.append(f)
-				self.imagesPaths.append(join(directory, f))
-				self.imagesLabel.append(label)
+				self.addImageFromSource(f, join(directory, f), label)
 
 	def readImage(self, imgId):
 		img = np.asarray(
@@ -72,10 +79,14 @@ class ImageDataFlow(BaseDataFlow):
 			img = self.preprocess(img)
 		elif isinstance(self.preprocess, BaseProcessor):
 			img = self.preprocess.process(img)
+
+		if self.augment:
+			img = self.augment.apply(img, imgId%self.nbAugmentFilters)
+
 		return img
 
 	def getDatas(self, ids):
-		images = [self.readImage(img) for img in ids]
+		images = [self.isolateChannels(self.readImage(img)) for img in ids]
 
 		for img in images:
 			if img.shape != images[0].shape:
@@ -86,8 +97,6 @@ class ImageDataFlow(BaseDataFlow):
 			else self.imagesLabel[img]
 			for img in ids
 		]
-
-		images = [self.isolateChannels(img) for img in images]
 
 		return [
 			[np.asarray(images, dtype=theano.config.floatX)],

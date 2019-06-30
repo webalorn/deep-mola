@@ -15,6 +15,9 @@ class Dropout(BaseLayer):
 		super().__init__(*args, **kwargs)
 		self.dropRate = dropRate
 
+	def getDisplayLayerSpecificInfos(self):
+		return "dropRate = {}".format(self.dropRate)
+
 	def buildInternal(self):
 		randGen = MRG_RandomStreams(np.random.RandomState(0).randint(999999))
 		self.mask = randGen.binomial(n=1, p=1-self.dropRate, size=self.train_x.shape[1:])
@@ -31,6 +34,6 @@ class Dropout(BaseLayer):
 			'dropRate': self.dropRate,
 		}
 
-	@classmethod
-	def serialGetParams(cls, datas):
-		return {'dropRate': datas['dropRate']}
+	def repopulate(self, datas):
+		super().repopulate(datas)
+		self.dropRate = dropRate

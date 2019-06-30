@@ -40,3 +40,13 @@ class Merge(BaseLayer):
 
 	def buildOutput(self, x):
 		return T.stack(self.x, axis = self.axis + 1)
+
+	def serialize(self):
+		return {
+			**super().serialize(),
+			'axis': self.axis,
+		}
+
+	def repopulate(self, datas):
+		super().repopulate(datas)
+		self.axis = datas['axis']

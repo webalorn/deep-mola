@@ -56,5 +56,5 @@ class Dense(BaseLayer):
 		}
 
 	@classmethod
-	def serialGetParams(cls, datas):
-		return {'outputSize': datas['outputSize'], 'noBias': datas['noBias']}
+	def reacretObj(cls, datas):
+		return cls(datas['outputSize'], noBias=datas['noBias'])

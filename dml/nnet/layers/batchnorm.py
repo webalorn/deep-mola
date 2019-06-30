@@ -74,12 +74,18 @@ class BatchNorm(BaseLayer):
 		y_norm = (x - self.expAvMean) / T.sqrt(self.expAvVariance + self.epsilon)
 		return y_norm * self.variance + self.mean
 
-	def serialize(self): # TODO: expAvMean, expAvVariance, etc...
+	def serialize(self):
 		return {
 			**super().serialize(),
 			'setMean': self.setMean,
+			'setVariance': self.setVariance,
+			'expAvCoeff': self.expAvCoeff,
+			'useAverage': self.useAverage,
 		}
 
-	@classmethod
-	def serialGetParams(cls, datas):
-		return {'setMean': datas['setMean'], 'setVariance' : datas['setVariance']}
+	def repopulate(self, datas):
+		super().repopulate(datas)
+		self.setMean = datas['setMean']
+		self.setVariance = datas['setVariance']
+		self.expAvCoeff = datas['expAvCoeff']
+		self.useAverage = datas['useAverage']

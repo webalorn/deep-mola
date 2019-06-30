@@ -39,10 +39,10 @@ class NormalGen(RandomGenerator):
 			dtype = theano.config.floatX,
 		)
 
-
-	@classmethod
-	def serialGetParams(cls, datas):
-		return {'k': datas['k'], 'center': datas['center']}
+	def repopulate(self, datas):
+		super().repopulate(datas)
+		self.k = datas['k']
+		self.center = datas['center']
 
 	def serialize(self):
 		return {

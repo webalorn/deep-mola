@@ -17,6 +17,7 @@ class BaseLayer(Serializable):
 
 	def __init__(self, inputs=[], randomGen = None):
 		self.network = None
+		self.iLayer = None # Id of the layer in the network
 
 		self.built = False
 		self.inputs = []
@@ -29,6 +30,24 @@ class BaseLayer(Serializable):
 		self.updates = []
 
 		self.addInput(inputs)
+
+	def getDisplayLayerSpecificInfos(self):
+		return ""
+
+	def getDisplayInfos(self):
+		out = ["", "", ""]
+		out[0] = "- Layer {} : {} {}".format(
+			self.iLayer,
+			self.__class__.__name__,
+			self.getDisplayLayerSpecificInfos()
+		)
+		out[1] = str(self.shape)
+		if self.inputs:
+			out[2] = "[{} inputs: {}]".format(
+				len(self.inputs),
+				", ".join([str(l.iLayer) for l in self.inputs])
+			)
+		return out
 
 	"""
 		Creating network structure
@@ -97,7 +116,9 @@ class BaseLayer(Serializable):
 		"""
 		return self.buildOutput(x)
 
-	def build(self):
+	def build(self, iLayer):
+		self.iLayer = iLayer
+
 		if self.nbInputs != None and self.nbInputs != len(self.inputs):
 			raise BuildError("Invalid number of input layers")
 
@@ -125,20 +146,17 @@ class BaseLayer(Serializable):
 	def serialize(self):
 		return {
 			**super().serialize(),
-			'inputs': [l._serialId for l in self.inputs],
-			'inputShape': self.inputShape,
-			'shape': self.shape,
+			'inputs': [l.iLayer for l in self.inputs],
 			'randomGen': self.randomGen.serialize() if self.randomGen else None,
 		}
 
 	def repopulate(self, datas):
-		self.inputs = tuple(datas['inputs'])
-		self.inputShape = tuple(datas['inputShape'])
-		self.shape = tuple(datas['shape']) if datas['shape'] else None
+		super().repopulate(datas)
+		self.inputs = datas['inputs']
 		self.randomGen = recreateObject(datas['randomGen'])
 
-	def repopulateFromNNet(self, nnet):
+	def repopulateFromNNet(self):
 		"""
 			Use the nnet objet to finish the layer reconstruction
 		"""
-		self.inputs = [nnet.layers[i] for i in self.inputs]
+		self.inputs = [self.network.layers[i] for i in self.inputs]

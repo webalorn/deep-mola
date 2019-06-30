@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.io as sio
 import theano
 import theano.tensor as T
 
@@ -10,9 +11,10 @@ from dml.math.cost import l2cost
 from dml.algos import GradientAlgo
 from dml.checkers import BaseChecker
 from dml.math.regularization import Regulator, L2regul
-from dml.tools.store import Storable, recreateObject
+from dml.tools.store import *
 from dml.tools.dataflow import BaseDataFlow, DirectDataFlow
 from dml.nnet.layers.presets.group import *
+from dml.tools.datautils import *
 
 
 class Network(Storable):
@@ -35,6 +37,18 @@ class Network(Storable):
 
 		self.add(layers)
 		self.addOutput(outputs)
+
+	def display(self):
+		print("Articial neural network :", self.__class__.__name__)
+		printInColumns([l.getDisplayInfos() for l in self.layers], colSep="  ")
+
+
+	def displayTraining(self, algo, batchSize, nbEpochs, nbExamples, regul):
+		print("\nTraining with", nbExamples, "in mini-batches of size", batchSize, "for", nbEpochs, "epochs")
+		print("-> optimizer (algorithm) :", algo.__class__.__name__)
+		print("-> learning rate :", algo.learningRate)
+		print("-> regularization :", regul)
+		print()
 
 	def add(self, layer):
 		if isinstance(layer, list):
@@ -98,14 +112,21 @@ class Network(Storable):
 						previous.randomGen = l.randomGen
 
 		# Build layers
-		for l in self.layers:
-			print("- Build layer...", type(l))
-			l.build()
+		for iLayer, l in enumerate(self.layers):
+			l.build(iLayer)
 			if isinstance(l, InputLayer):
 				self.inputLayers.append(l)
 
+		self.display()
+
 		self.params = [p for l in self.layers for p in l.params]
 		self.regularized = [p for l in self.layers for p in l.regularized]
+
+		self.netUpdates = []
+		for l in self.layers:
+			for lUpdate in l.updates:
+				self.netUpdates.append(lUpdate)
+		self.updatedVars = [v[0] for v in self.netUpdates]
 
 		self.inputTensors = [l.y for l in self.inputLayers]
 
@@ -145,12 +166,8 @@ class Network(Storable):
 				regul = L2regul(regul)
 			self.cost += regul.cost(self.regularized) / batchSize
 
-		netUpdates = []
-		for l in self.layers:
-			for lUpdate in l.updates:
-				netUpdates.append(lUpdate)
 
-		self.trainAlgo = algo.trainFct(self.cost, self.inputTensors, expectY, [self.trainX, self.trainY], batchSize, self.params, netUpdates)
+		self.trainAlgo = algo.trainFct(self.cost, self.inputTensors, expectY, [self.trainX, self.trainY], batchSize, self.params, self.netUpdates)
 
 	def train(self, trainDatas, nbEpochs=1, batchSize=1,
 			algo=GradientAlgo(0.5),
@@ -171,7 +188,9 @@ class Network(Storable):
 		nbExamples = trainDatas.getSize()
 		datasOrder = np.arange(nbExamples)
 
-		print("Building finished, training begins")
+		self.displayTraining(algo, batchSize, nbEpochs, nbExamples, regul)
+
+		print("Training begins")
 		for m in monitors:
 			m.startTraining(nbEpochs)
 
@@ -240,29 +259,61 @@ class Network(Storable):
 
 		return self.checker.evaluate(self, datas).accuracy()
 
+	"""
+		Serialize datas
+	"""
+
 	def serialize(self):
 		for i, l in enumerate(self.layers):
-			l._serialId = i
+			l.iLayer = i
 
 		return {
 			**super().serialize(),
 			'layers': [l.serialize() for l in self.layers],
-			'outputLayers': [l._serialId for l in self.outputLayers],
+			'outputLayers': [l.iLayer for l in self.outputLayers],
 			'checker': None if not self.checker else self.checker.serialize(),
-			'params': [p.get_value().tolist() for p in self.params]
+			'maxBatch': self.maxBatch,
+			'defaultLoss': serializeFunc(self.defaultLoss),
+			'outLoss': [serializeFunc(f) for f in self.outLoss],
+			# 'params': [p.get_value().tolist() for p in self.params]
 		}
 
 	def repopulate(self, datas):
-		self.layers = [recreateObject(l) for l in datas['layers']]
-		for l in self.layers:
-			l.repopulateFromNNet(self)
+		layers = [recreateObject(l) for l in datas['layers']]
+		self.add(layers)
+		for l in layers:
+			l.repopulateFromNNet()
 
 		self.outputLayers = [self.layers[i] for i in datas['outputLayers']]
 		self.checker = recreateObject(datas['checker'])
+		self.max = datas['maxBatch']
+		self.defaultLoss = recreateObject(datas['defaultLoss'])
+		self.outLoss = [recreateObject(o) for o in datas['outLoss']]
 
-		self.build() # The network must then be built to charge datas
-		for iParam, param in enumerate(self.params):
-			param.set_value(np.array(
-				datas['params'][iParam],
-				dtype=theano.config.floatX,
-			), borrow=True)
+		# self.build() # The network must then be built to charge datas
+		# for iParam, param in enumerate(self.params):
+		# 	param.set_value(np.array(
+		# 		datas['params'][iParam],
+		# 		dtype=theano.config.floatX,
+		# 	), borrow=True)
+
+	def saveParameters(self, filename):
+		sio.savemat(filename, {
+			**{"p_" + str(i) : p.get_value() for i, p in enumerate(self.params)},
+			**{"u_" + str(i) : p.get_value() for i, p in enumerate(self.updatedVars)}
+		})
+
+	def loadParameters(self, filename):
+		prefixes = {"p_":{}, "u_":{}}
+		for key, p in sio.loadmat(filename).items():
+			for pre, d in prefixes.items():
+				if key[:len(pre)] == pre:
+					d[key[len(pre):]] = p
+
+		for i, p in prefixes["p_"].items():
+			t = self.params[int(i)]
+			t.set_value(p.reshape(t.get_value().shape))
+
+		for i, p in prefixes["u_"].items():
+			t = self.updatedVars[int(i)]
+			t.set_value(p.reshape(t.get_value().shape))

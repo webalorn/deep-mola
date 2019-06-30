@@ -19,7 +19,7 @@ class OneClassMetrics():
 
 		self.answers = []
 
-	def addResult(self, goodClass, answerClass):
+	def addResult(self, goodClass, answerClass, storeResult=True):
 		self.nbElems += 1
 		self.nbElInClass[goodClass] += 1
 
@@ -29,11 +29,14 @@ class OneClassMetrics():
 		else:
 			self.nbMisclassIn[answerClass] += 1
 
+		if storeResult:
+			self.answers.append((goodClass, answerClass))
+
 	def setResult(self, expectedClasses, answerClasses):
 		self.answers = [(a, b) for a, b in zip(expectedClasses, answerClasses)]
 
 		for goodC, ansC in self.answers:
-			self.addResult(goodC, ansC)
+			self.addResult(goodC, ansC, storeResult=False)
 
 	def accuracy(self):
 		return self.nbRightElems / self.nbElems

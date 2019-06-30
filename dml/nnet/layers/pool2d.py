@@ -36,8 +36,13 @@ class Pool2D(BaseLayer):
 			**super().serialize(),
 			'downScale': self.downScale,
 			'stride': self.stride,
+			'padding': self.stride,
+			'mode': self.stride,
 		}
 
-	@classmethod
-	def serialGetParams(cls, datas):
-		return {p: tuple(datas[p]) for p in ['downScale', 'stride', 'padding']}
+	def repopulate(self, datas):
+		super().repopulate(datas)
+		self.downScale = tuple(datas['downScale'])
+		self.stride = tuple(datas['stride'])
+		self.padding = tuple(datas['padding'])
+		self.mode = datas['mode']
