@@ -38,9 +38,17 @@ class Network(Storable):
 		self.add(layers)
 		self.addOutput(outputs)
 
+	def clean(self, keepOutput=True):
+		if not keepOutput:
+			self.outputLayers = []
+		self.built = False
+		for l in self.layers:
+			l.clean()
+
 	def display(self):
 		print("Articial neural network :", self.__class__.__name__)
 		printInColumns([l.getDisplayInfos() for l in self.layers], colSep="  ")
+		print("Outputs :", [l.iLayer for l in self.outputLayers])
 
 
 	def displayTraining(self, algo, batchSize, nbEpochs, nbExamples, regul):
@@ -51,6 +59,7 @@ class Network(Storable):
 		print()
 
 	def add(self, layer):
+		self.built = False
 		if isinstance(layer, list):
 			for l in layer:
 				self.add(l)
@@ -62,15 +71,40 @@ class Network(Storable):
 		return layer
 
 	def addOutput(self, layer, loss=None):
+		self.built = False
 		if isinstance(layer, list):
 			for l in layer:
 				self.addOutput(l, loss)
 		elif isinstance(layer, PresetGroup):
 			self.add(layer.endLayers)
+		elif isinstance(layer, int):
+			self.add(self.layers[layer])
 		else:
 			self.outputLayers.append(layer)
 			self.outLoss.append(loss or self.defaultLoss)
 		return layer
+
+	def idsToLayers(self, l):
+		if isinstance(l, list):
+			return [self.idsToLayers(li) for li in l]
+		return self.layers[l] if isinstance(l, int) else l
+
+	def remove(self, layerList):
+		self.built = False
+		layerList = toFlatList(self.idsToLayers(layerList))
+
+		for layer in layerList:
+			self.layers = [l for l in self.layers if id(l) != id(layer)]
+			for l in self.layers:
+				l.inputs = [li for li in l.inputs if id(li) != id(layer)]
+
+			inOut = -1
+			for i, l in enumerate(self.outputLayers):
+				if id(l) == id(layer):
+					inOut = i
+			if inOut > -1:
+				self.outputLayers = self.outputLayers[:inOut] + self.outputLayers[inOut+1:]
+				self.outLoss = self.outLoss[:inOut] + self.outLoss[inOut+1:]
 
 	def setChecker(self, checker):
 		if not isinstance(checker, BaseChecker) and checker != None:
@@ -104,6 +138,13 @@ class Network(Storable):
 		"""
 		print("Start building network...")
 
+		if not self.outputLayers:
+			self.addOutput(self.layers[-1])
+
+		for l1, l2 in zip(self.layers, self.layers[1:]):
+			if not l2.inputs and l2.nbInputs:
+				l2.addInput(l1)
+
 		# First, assign random generators to layers
 		for l in reversed(self.layers):
 			if l.randomGen:
@@ -112,6 +153,7 @@ class Network(Storable):
 						previous.randomGen = l.randomGen
 
 		# Build layers
+		self.inputLayers = []
 		for iLayer, l in enumerate(self.layers):
 			l.build(iLayer)
 			if isinstance(l, InputLayer):
@@ -178,6 +220,9 @@ class Network(Storable):
 			trainDatas shape (numpy arrays) : [<input>, <output>]
 			<input> / <output> shape: [ [<tensor>] * nbExamples ] * nbLayers
 		"""
+		if not self.built:
+			raise UsageError("Network must be built before beeing trained")
+
 		self._buildTrainFct(batchSize, algo, regul)
 		if not isinstance(monitors, list):
 			monitors = [monitors]
@@ -218,6 +263,9 @@ class Network(Storable):
 			m.trainingFinished()
 
 	def runBatch(self, inputDatas, maxBatch=None, oneOutLayer=False):
+		if not self.built:
+			raise UsageError("Network must be built before running on a batch")
+
 		inputDatas = self.reshapeIODatas(inputDatas)
 		maxBatch = maxBatch or self.maxBatch or inputDatas[0].shape[0]
 		nbLayers, batchSize = len(inputDatas), len(inputDatas[0])
@@ -298,12 +346,16 @@ class Network(Storable):
 		# 	), borrow=True)
 
 	def saveParameters(self, filename):
+		if not self.built:
+			raise UsageError("Network must be built before saving parameters")
 		sio.savemat(filename, {
 			**{"p_" + str(i) : p.get_value() for i, p in enumerate(self.params)},
 			**{"u_" + str(i) : p.get_value() for i, p in enumerate(self.updatedVars)}
 		})
 
 	def loadParameters(self, filename):
+		if not self.built:
+			raise UsageError("Network must have been built before loading parameters")
 		prefixes = {"p_":{}, "u_":{}}
 		for key, p in sio.loadmat(filename).items():
 			for pre, d in prefixes.items():

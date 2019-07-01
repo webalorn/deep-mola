@@ -10,6 +10,15 @@ def getShapeDim1(datas):
 		return [len(datas)]+getShapeDim1(datas[0])
 	return [datas.shape]
 
+def toFlatList(l):
+	if isinstance(l, list):
+		lFlat = []
+		for el in l:
+			lFlat.extend(toFlatList(el))
+		return lFlat
+	else:
+		return [l]
+
 def mergeIODatas(datasList, ioShape=True):
 	"""
 		Merge input / output datas accross layers.

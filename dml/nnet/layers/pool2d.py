@@ -36,13 +36,13 @@ class Pool2D(BaseLayer):
 			**super().serialize(),
 			'downScale': self.downScale,
 			'stride': self.stride,
-			'padding': self.stride,
-			'mode': self.stride,
+			'padding': self.padding,
+			'mode': self.mode,
 		}
 
 	def repopulate(self, datas):
 		super().repopulate(datas)
 		self.downScale = tuple(datas['downScale'])
-		self.stride = tuple(datas['stride'])
+		self.stride = tuple(datas['stride']) if datas['stride'] else None
 		self.padding = tuple(datas['padding'])
 		self.mode = datas['mode']

@@ -31,6 +31,9 @@ class BaseLayer(Serializable):
 
 		self.addInput(inputs)
 
+	def clean(self):
+		self.built = False # When the network will be rebuilt, datas will be erased
+
 	def getDisplayLayerSpecificInfos(self):
 		return ""
 
@@ -54,6 +57,7 @@ class BaseLayer(Serializable):
 	"""
 
 	def addInput(self, layer):
+		self.built = False
 		if isinstance(layer, list):
 			for l in layer:
 				self.addInput(l)
@@ -118,6 +122,8 @@ class BaseLayer(Serializable):
 
 	def build(self, iLayer):
 		self.iLayer = iLayer
+		if self.built:
+			return
 
 		if self.nbInputs != None and self.nbInputs != len(self.inputs):
 			raise BuildError("Invalid number of input layers")

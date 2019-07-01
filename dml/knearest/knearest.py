@@ -19,28 +19,17 @@ class KNearestBase:
 			datas[1]
 		]
 		self.nbExamples = len(self.datas[0][0])
-		self.realDatas = self.datas
 		self.lSize = [l[0].shape[0] for l in self.datas[0]]
-		self.transforms = [np.identity(vectSize) for vectSize in self.lSize]
 
 		self.distFct = distFct
 
-	def transformDatas(self): # Apply "transform" to all datas
-		self.realDatas = [
-			[
-				np.array([np.dot(tr, example) for example in l])
-				for l, tr in zip(self.datas[0], self.transforms)
-			],
-			self.datas[1]
-		]
-
 	def getOutOf(self, i):
-		return [l[i] for l in self.realDatas[1]]
+		return [l[i] for l in self.datas[1]]
 
 	def getNeighbors(self, example):
 		example = example.flatten()
 		return sorted([
-			(self.distFct(example, self.realDatas[0][0][i]), self.getOutOf(i))
+			(self.distFct(example, self.datas[0][0][i]), self.getOutOf(i))
 			for i in range(self.nbExamples)
 		], key=lambda x : x[0])[:self.k]
 
@@ -64,7 +53,8 @@ class KNearestClassifier(KNearestBase):
 
 	def evalDataset(self, testDatas):
 		metrics = OneClassMetrics(self.nbClasses)
-		for i in range(self.nbExamples):
+		nbTestExamples = len(testDatas[0][0])
+		for i in range(nbTestExamples):
 			metrics.addResult(
 				testDatas[1][0][i].argmax(),
 				self.predictExample(testDatas[0][0][i])

@@ -96,7 +96,7 @@ class Convolution2D(BaseLayer):
 		self.filterShape = tuple(datas['filterShape'])
 		self.nbChannels = datas['nbChannels']
 		self.noOutChannels = datas['noOutChannels']
-		self.stride = tuple(datas['stide'])
+		self.stride = tuple(datas['stride'])
 
 		padding = datas['padding']
 		self.padding = tuple(padding) if isinstance(padding, list) else padding
