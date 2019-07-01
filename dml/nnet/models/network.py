@@ -167,7 +167,7 @@ class Network(Storable):
 			self.cost += regul.cost(self.regularized) / batchSize
 
 
-		self.trainAlgo = algo.trainFct(self.cost, self.inputTensors, expectY, [self.trainX, self.trainY], batchSize, self.params, self.netUpdates)
+		self.trainAlgo = algo.trainNN(self.cost, self.inputTensors, expectY, [self.trainX, self.trainY], self.params, self.netUpdates)
 
 	def train(self, trainDatas, nbEpochs=1, batchSize=1,
 			algo=GradientAlgo(0.5),

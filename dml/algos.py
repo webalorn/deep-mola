@@ -13,21 +13,27 @@ class TrainAlgo():
 	def getUpdates(self, params, grads):
 		return []
 
-	def trainFct(self, cost, inputTensors, expectY, trainDatas, batchSize, params, netUpdates):
-		trainX, trainY = trainDatas
-
+	def trainFct(self, cost, params, givens={}, updates=[]):
 		grads = T.grad(cost, params)
-		updates = self.getUpdates(params, grads) + netUpdates
+		updates += self.getUpdates(params, grads)
 
 		gradientTrain = theano.function(
 			[], cost,
 			updates = updates,
-			givens = {
+			givens = givens,
+		)
+		return gradientTrain
+
+	def trainNN(self, cost, inputTensors, expectY, trainDatas, params, netUpdates=[]):
+		if trainDatas:
+			trainX, trainY = trainDatas
+		return self.trainFct(cost, params,
+			givens={
 				**{ x : trainX[iLayer] for iLayer, x in enumerate(inputTensors) },
 				**{ y : trainY[iLayer] for iLayer, y in enumerate(expectY) },
 			},
+			updates=netUpdates
 		)
-		return gradientTrain
 
 class GradientAlgo(TrainAlgo):
 	"""
