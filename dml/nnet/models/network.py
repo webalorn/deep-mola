@@ -22,7 +22,7 @@ class Network(Storable):
 		Represents a neural network with it's inputs, outputs and layers
 	"""
 
-	def __init__(self, layers=[], outputs=[], maxBatch=100, defaultLoss=l2cost):
+	def __init__(self, layers=[], outputs=[], maxBatch=100, defaultLoss=l2cost, noReshape=False):
 		self.layers = []
 		self.inputLayers = []
 		self.outputLayers = []
@@ -31,12 +31,15 @@ class Network(Storable):
 		self.checker = None
 		self.maxBatch = maxBatch
 		self.defaultLoss = defaultLoss
+		self.noReshape = noReshape
 
 		self.params = []  # Learnable parameters
 		self.regularized = [] # Parameters that can be regularized
 
 		self.add(layers)
 		self.addOutput(outputs)
+
+		self.dataProvider = NNetDataProvider
 
 	def clean(self, keepOutput=True):
 		if not keepOutput:
@@ -121,6 +124,8 @@ class Network(Storable):
 			return 0
 
 	def reshapeIODatas(self, datas, isInput=True, withBatch=True):
+		if self.noReshape:
+			return datas
 		addDims = (1 if withBatch else 0) + 1
 		models = self.inputLayers if isInput else self.outputLayers # Tensor representing input
 
@@ -185,23 +190,24 @@ class Network(Storable):
 
 		self.built = True
 
-	def _buildTrainFct(self, batchSize, algo, regul):
-		if not self.built:
-			raise UsageError("Please build the network before training it")
-
-		print("Start building training function...")
-		if not self.built:
-			raise BuildError("Layer not already built")
-
+	def _buildInOutShared(self, batchSize):
 		datasX = [np.zeros((batchSize,) + l.shape, dtype=theano.config.floatX) for l in self.inputLayers]
 		datasY = [np.zeros((batchSize,) + l.shape, dtype=theano.config.floatX) for l in self.outputLayers]
 
-		self.trainX = [theano.shared(lX, name="trainX", borrow=True) for lX in datasX] # To allow theano functions to access traning datas
+		self.trainX = [theano.shared(lX, name="trainX", borrow=True) for lX in datasX] # Access traning datas
 		self.trainY = [theano.shared(lY, name="trainY", borrow=True) for lY in datasY]
 
-		expectY = [newBatchTensor(l.shape) for l in self.outputLayers]
+	def _buildTrainCost(self, batchSize):
+		self._buildInOutShared(batchSize)
 
-		self.cost = sum([self.outLoss[iLayer](yOut, expectY[iLayer]) for iLayer, yOut in enumerate(self.trainOuts)])
+		self.cost = sum([
+			self.outLoss[iLayer](yOut, self.trainY[iLayer]).mean()
+			for iLayer, yOut in enumerate(self.trainOuts)
+		])
+
+	def _buildTrainFct(self, batchSize, algo, regul):
+		print("Start building training function...")
+		self._buildTrainCost(batchSize)
 
 		if regul:
 			if not isinstance(regul, Regulator): # Default regularization is L2
@@ -209,7 +215,7 @@ class Network(Storable):
 			self.cost += regul.cost(self.regularized) / batchSize
 
 
-		self.trainAlgo = algo.trainNN(self.cost, self.inputTensors, expectY, [self.trainX, self.trainY], self.params, self.netUpdates)
+		self.trainAlgo = algo.trainNN(self.cost, self.inputTensors, self.trainX, self.params, self.netUpdates)
 
 	def train(self, trainDatas, nbEpochs=1, batchSize=1,
 			algo=GradientAlgo(0.5),
@@ -221,7 +227,7 @@ class Network(Storable):
 			<input> / <output> shape: [ [<tensor>] * nbExamples ] * nbLayers
 		"""
 		if not self.built:
-			raise UsageError("Network must be built before beeing trained")
+			raise UsageError("Network must be built before being trained")
 
 		self._buildTrainFct(batchSize, algo, regul)
 		if not isinstance(monitors, list):
@@ -230,10 +236,9 @@ class Network(Storable):
 		if not isinstance(trainDatas, BaseDataFlow):
 			trainDatas = DirectDataFlow(self.reshapeDatas(trainDatas))
 
-		nbExamples = trainDatas.getSize()
-		datasOrder = np.arange(nbExamples)
+		provider = self.dataProvider(trainDatas, self)
 
-		self.displayTraining(algo, batchSize, nbEpochs, nbExamples, regul)
+		self.displayTraining(algo, batchSize, nbEpochs, trainDatas.getSize(), regul)
 
 		print("Training begins")
 		for m in monitors:
@@ -241,16 +246,19 @@ class Network(Storable):
 
 		for iEpoch in range(nbEpochs):
 			print("Epoch", iEpoch)
-			np.random.shuffle(datasOrder)
+			provider.startEpoch(iEpoch, batchSize)
+			print("With {} mini-batches of size {}".format(provider.getNbBatches(), batchSize))
 
 			epochCost = 0
-			for iBatch in range(nbExamples // batchSize):
-				ids = datasOrder[iBatch*batchSize : (iBatch+1)*batchSize]
-				newDatas = trainDatas.getDatas(ids)
+			nbBatches = provider.getNbBatches() 
+			for iBatch in range(nbBatches):
+				for m in monitors:
+					m.batchStarted(iEpoch, iBatch, nbBatches)
+				newDatas = provider.getBatchDatas(iBatch)
 
 				for trainDim, dimDatas in zip([self.trainX, self.trainY], newDatas):
 					if len(trainDim) != len(dimDatas):
-						raise UsageError("There must be as many input / output layers as input / output datas")
+						raise UsageError("There must be as many input / output layers as in input / output datas")
 					for tensor, val in zip(trainDim, dimDatas):
 						tensor.set_value(val, borrow=True)
 
@@ -369,3 +377,23 @@ class Network(Storable):
 		for i, p in prefixes["u_"].items():
 			t = self.updatedVars[int(i)]
 			t.set_value(p.reshape(t.get_value().shape))
+
+
+class NNetDataProvider:
+	def __init__(self, trainDatas, nnet):
+		self.nnet = nnet
+		self.trainDatas = trainDatas
+		self.nbExamples = trainDatas.getSize()
+		self.datasOrder = np.arange(self.nbExamples)
+
+	def startEpoch(self, iEpoch, batchSize):
+		np.random.shuffle(self.datasOrder)
+		self.batchSize = batchSize
+		self.iEpoch = iEpoch
+
+	def getNbBatches(self):
+		return self.nbExamples // self.batchSize
+
+	def getBatchDatas(self, iBatch):
+		ids = self.datasOrder[iBatch*self.batchSize : (iBatch+1)*self.batchSize]
+		return self.trainDatas.getDatas(ids)

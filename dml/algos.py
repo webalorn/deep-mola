@@ -24,14 +24,9 @@ class TrainAlgo():
 		)
 		return gradientTrain
 
-	def trainNN(self, cost, inputTensors, expectY, trainDatas, params, netUpdates=[]):
-		if trainDatas:
-			trainX, trainY = trainDatas
+	def trainNN(self, cost, inputTensors, trainX, params, netUpdates=[]):
 		return self.trainFct(cost, params,
-			givens={
-				**{ x : trainX[iLayer] for iLayer, x in enumerate(inputTensors) },
-				**{ y : trainY[iLayer] for iLayer, y in enumerate(expectY) },
-			},
+			givens={ x : trainX[iLayer] for iLayer, x in enumerate(inputTensors) },
 			updates=netUpdates
 		)
 

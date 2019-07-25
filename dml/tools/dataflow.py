@@ -1,7 +1,7 @@
 import skimage, theano, os
 import numpy as np
 from os.path import isfile, join
-from dml.tools.preprocessors import BaseProcessor
+from dml.tools.preprocessors import *
 from dml.tools.datautils import *
 from dml.excepts import *
 
@@ -35,7 +35,7 @@ class DirectDataFlow(BaseDataFlow):
 		return self.datas
 
 class ImageDataFlow(BaseDataFlow):
-	def __init__(self, preprocess=None, rescale=1/256, augment=None):
+	def __init__(self, preprocess=None, rescale=1/256, augment=None, keepGray=True):
 		self.imagesNames = []
 		self.imagesPaths = []
 		self.imagesLabel = []
@@ -43,11 +43,12 @@ class ImageDataFlow(BaseDataFlow):
 		self.rescale = rescale # Rescale colors
 		self.augment = augment
 		self.nbAugmentFilters = 1 if augment == None else augment.nbFilters()
+		self.keepGray = keepGray # Do not convert to RGB.
 
 	@staticmethod
 	def isolateChannels(image):
 		""" convert shape (h, w, channels) to (channels, h, w) """
-		if image.ndim < 3:
+		if isImgGrayscale(image):
 			return image # If grayscale
 		nbChan = len(image[0][0])
 		return np.asarray([
@@ -75,6 +76,8 @@ class ImageDataFlow(BaseDataFlow):
 			dtype=theano.config.floatX
 		) * self.rescale
 
+		if not self.keepGray:
+			img = ImagePreprocess.toRGBImage(img)
 		if callable(self.preprocess):
 			img = self.preprocess(img)
 		elif isinstance(self.preprocess, BaseProcessor):

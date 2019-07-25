@@ -14,6 +14,7 @@ class DefaultMonitor:
 		"""
 		self.testNames = [infos[0] for infos in testInfos]
 		self.testDatas = [infos[1] for infos in testInfos]
+		self.checkerParams = [infos[2] if len(infos) >= 3 else {} for infos in testInfos]
 		self.autoSave = autoSave
 
 	def startTraining(self, maxEpochs):
@@ -25,15 +26,19 @@ class DefaultMonitor:
 	def dataSetTested(self, name, total, success, rate):
 		pass
 
+	def batchStarted(self, iEpoch, iBatch, nbBatches):
+		pass
+
 	def epochFinished(self, nnet, iEpoch, trainCost):
 		if self.autoSave:
 			nnet.saveTo(self.autoSave)
 
-		for name, datas in zip(self.testNames, self.testDatas):
-			metrics = nnet.checker.evaluate(nnet, datas)
-			total, success, rate = metrics.nbElems, metrics.nbRightElems, metrics.accuracy()
+		for name, datas, params in zip(self.testNames, self.testDatas, self.checkerParams):
+			metrics = nnet.checker.evaluate(nnet, datas, **params)
+			metrics.outputs(name, self)
 
-			self.dataSetTested(name, total, success, rate)
+	def print(self, *args, **kwargs):
+		raise Exception("This monitor does not support printing to standard output")
 
 class StdOutputMonitor(DefaultMonitor):
 	"""
@@ -42,18 +47,24 @@ class StdOutputMonitor(DefaultMonitor):
 
 	def epochFinished(self, nnet, iEpoch, trainCost):
 		now = datetime.datetime.now()
-		print("==> Epoch {} finished [{}]".format(iEpoch, now.strftime("%H:%M:%S")))
-		print("Cost:", trainCost)
+		self.print("==> Epoch {} finished [{}]     ".format(iEpoch, now.strftime("%H:%M:%S")))
+		self.print("Cost:", trainCost)
 
 		super().epochFinished(nnet, iEpoch, trainCost)
 
 	def dataSetTested(self, name, total, success, rate):
-		print("Dataset {} has success rate of {:.2f}% : {} over {}".format(
+		self.print("Dataset {} has success rate of {:.2f}% : {} over {}".format(
 			name,
 			rate * 100,
 			success,
 			total,
 		))
+
+	def batchStarted(self, iEpoch, iBatch, nbBatches):
+		self.print("Running batches ... {}/{}".format(iBatch, nbBatches), end="\r")
+
+	def print(self, *args, **kwargs):
+		print(*args, **kwargs)
 
 class GraphicMonitor(StdOutputMonitor):
 	"""

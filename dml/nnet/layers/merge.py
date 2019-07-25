@@ -18,7 +18,7 @@ class Merge(BaseLayer):
 
 	def __init__(self, axis=0, *args, **kwargs):
 		super().__init__(*args, **kwargs)
-		self.axis = 0
+		self.axis = axis
 
 	def computeInputShape(self):
 		pass
@@ -39,7 +39,7 @@ class Merge(BaseLayer):
 		self.shape = tuple(shape)
 
 	def buildOutput(self, x):
-		return T.stack(self.x, axis = self.axis + 1)
+		return T.stack(x, axis = self.axis + 1).reshape((x[0].shape[0], ) + self.shape)
 
 	def serialize(self):
 		return {

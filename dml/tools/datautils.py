@@ -49,3 +49,6 @@ def showImage(image):
 	from matplotlib import pyplot as plt
 	plt.imshow(image)
 	plt.show()
+
+def isImgGrayscale(image):
+	return len(image.shape) == 2

@@ -1,6 +1,5 @@
 from importlib import import_module
 import os, json
-import theano as T
 
 # Serializable objects
 
